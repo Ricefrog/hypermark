@@ -7,6 +7,7 @@ import (
 	"flag"
 	"os"
 	"log"
+	"bufio"
 )
 
 const HN_URL = "https://news.ycombinator.com/"
@@ -86,24 +87,24 @@ func main() {
 									0666,
 								)
 			if fileExists {
-				var choice string
+				var userInput string
 				fmt.Printf(
 					"The file '%s' will be overwritten.\n",
 					fileName,
 				)
 				fmt.Printf("Proceed? y/n: ")
-				if _, err = fmt.Scan(&choice); err != nil {
+				if _, err = fmt.Scan(&userInput); err != nil {
 					log.Fatal(err)
 				}
 
-				switch choice {
+				switch userInput {
 				case "y":
 					break
 				case "n":
 					fmt.Printf("Exiting program.\n")
 					return
 				default:
-					fmt.Printf("Invalid option (%s).\n", choice)
+					fmt.Printf("Invalid option (%s).\n", userInput)
 					return
 				}
 			}
@@ -136,21 +137,39 @@ func main() {
 		}
 	} else if k != "" {
 		fmt.Printf("Searching for articles with '%s' in the title.\n", k)
+
 		output := ""
+		articlesFound := 0
 		for i := 0; i < 30; i++ {
 			if strings.Contains(strings.ToLower(titles[i]), k) {
-				output = appendArticle(output,
-									   titles[i],
-									   storylinks[i],
-									   commentlinks[i])
+				output = appendArticle(
+							output,
+							titles[i],
+							storylinks[i],
+							commentlinks[i])
+				articlesFound++
 			}
 		}
-		fmt.Printf("Writing output to %s.\n", outputPath.Name())
+		fmt.Printf("%d articles found. Writing output to %s.\n",
+					articlesFound,
+					outputPath.Name())
 		_, err := outputPath.Write([]byte(output))
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		fmt.Println("default mode")
+		for i, title := range titles {
+			fmt.Printf("%d %s\n", i+1, title)
+		}
+
+		var userInput string
+		fmt.Printf("\nArticles to save: (eg: 1 2 3, 1-3)\n")
+		reader := bufio.NewReader(os.Stdin)
+		userInput, err := reader.ReadString('\n')
+		userInput = userInput[:len(userInput) - 1]
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("userInput: %s\n", userInput)
 	}
 }
