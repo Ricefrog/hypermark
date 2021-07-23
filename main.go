@@ -14,11 +14,12 @@ import (
 )
 
 const HN_URL = "https://news.ycombinator.com/"
+const EARLY_EXIT = "42"
 
+// flags
 var k string
 var o bool
 var s bool
-
 func init() {
 	// k and s are mutually exclusive.
 	flag.StringVar(&k, "k", "",
@@ -121,73 +122,90 @@ func getUserSelections(userInput string) ([]int, error) {
 	return removeDuplicates(selections), nil
 }
 
+func overwriteMode(
+	fileExists bool,
+	fileName string,
+) (outputPath *os.File, err error) {
+	if fileExists {
+		var userInput string
+		fmt.Printf(
+			"The file '%s' will be overwritten.\n",
+			fileName,
+		)
+		fmt.Printf("Proceed? y/n: ")
+		if _, err = fmt.Scan(&userInput); err != nil {
+			log.Fatal(err)
+		}
+
+		switch userInput {
+		case "y":
+			break
+		case "n":
+			fmt.Printf("Exiting program.\n")
+			return outputPath, errors.New(EARLY_EXIT)
+		default:
+			fmt.Printf("Invalid option (%s).\n", userInput)
+			return outputPath, errors.New(EARLY_EXIT)
+		}
+		// Wipe the data on the file.
+		if err = os.Remove(fileName); err != nil {
+			log.Fatal(err)
+		}
+	}
+	// Create the file.
+	outputPath, err = os.OpenFile(
+		fileName,
+		os.O_CREATE|os.O_WRONLY,
+		0666,
+	)
+	return outputPath, err
+}
+
+func getFile(fileName string) (outputPath *os.File, err error) {
+	fileExists := true
+	if _, err = os.Stat(fileName); err != nil {
+		if os.IsNotExist(err) {
+			fileExists = false
+		}
+	}
+
+	// File will be overwritten.
+	if o {
+		outputPath, err = overwriteMode(fileExists, fileName)
+	} else {
+	// File will be appended.
+		outputPath, err = os.OpenFile(
+			fileName,
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+			0666,
+		)
+	}
+	return outputPath, err
+}
+
+func chooseOutputPath(tail []string) (outputPath *os.File, err error) {
+	if len(tail) > 0 {
+		outputPath, err = getFile(tail[0])
+	} else {
+		outputPath, err = os.Stdout, nil
+	}
+	return outputPath, err
+}
+
 func main() {
 	flag.Parse()
 
 	var outputPath *os.File
-	tail := flag.Args()
-	if len(tail) > 0 {
-		var err error
-		fileName := tail[0]
-		fileExists := true
-		if _, err = os.Stat(fileName); err != nil {
-			if os.IsNotExist(err) {
-				fileExists = false
-			}
-		}
+	var err error
 
-		if o {
-			if fileExists {
-				var userInput string
-				fmt.Printf(
-					"The file '%s' will be overwritten.\n",
-					fileName,
-				)
-				fmt.Printf("Proceed? y/n: ")
-				if _, err = fmt.Scan(&userInput); err != nil {
-					log.Fatal(err)
-				}
-
-				switch userInput {
-				case "y":
-					break
-				case "n":
-					fmt.Printf("Exiting program.\n")
-					return
-				default:
-					fmt.Printf("Invalid option (%s).\n", userInput)
-					return
-				}
-				// Wipe the data on the file.
-				if err = os.Remove(fileName); err != nil {
-					log.Fatal(err)
-				}
-			}
-			// Create the file.
-			outputPath, err = os.OpenFile(
-				fileName,
-				os.O_CREATE|os.O_WRONLY,
-				0666,
-			)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			fmt.Println("Appending to file.")
-			outputPath, err = os.OpenFile(
-				fileName,
-				os.O_APPEND|os.O_CREATE|os.O_WRONLY,
-				0666,
-			)
+	// outputPath is either a user-provided file or Stdout.
+	if outputPath, err = chooseOutputPath(flag.Args()); err != nil {
+		if err.Error() == EARLY_EXIT {
+			return
 		}
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer outputPath.Close()
-	} else {
-		outputPath = os.Stdout
+		log.Fatal(err)
 	}
+	defer outputPath.Close()
 
 	titles, storylinks, commentlinks := scrapeHN()
 
@@ -230,7 +248,7 @@ func main() {
 		fmt.Printf("\nArticles to save: (eg: 1 2 3, 1-3)\n")
 		reader := bufio.NewReader(os.Stdin)
 		userInput, err := reader.ReadString('\n')
-		userInput = userInput[:len(userInput)-1]
+		userInput = userInput[:len(userInput)-1] // remove trailing newline
 		if err != nil {
 			log.Fatal(err)
 		}
