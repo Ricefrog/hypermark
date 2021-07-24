@@ -1,4 +1,4 @@
-module hackerNewsReadLater
+module hypermark
 
 go 1.16
 

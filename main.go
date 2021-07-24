@@ -5,15 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/gocolly/colly"
 	"log"
 	"os"
 	"regexp"
 	"strconv"
+	"hypermark/hackerNews"
 	"strings"
 )
 
-const HN_URL = "https://news.ycombinator.com/"
 const EARLY_EXIT = "42"
 
 // flags
@@ -29,45 +28,8 @@ func init() {
 	flag.BoolVar(&s, "s", false, "Show all articles and exit.")
 }
 
-func scrapeHN() ([]string, []string, []string) {
-	index := 0
-	cIndex := 0
-	titles := make([]string, 30)
-	storylinks := make([]string, 30)
-	commentlinks := make([]string, 30)
-
-	c := colly.NewCollector()
-
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
-	})
-
-	c.OnHTML(".athing", func(e *colly.HTMLElement) {
-		titles[index] = e.ChildText("a.storylink")
-		storylinks[index] = e.ChildAttr("a.storylink", "href")
-		index++
-	})
-
-	c.OnHTML(".athing + tr", func(e *colly.HTMLElement) {
-		commentlinks[cIndex] = e.ChildAttr("td.subtext a:nth-child(6)", "href")
-		cIndex++
-	})
-
-	c.Visit(HN_URL)
-	for i, _ := range titles {
-		if commentlinks[i] != "" {
-			commentlinks[i] = HN_URL + commentlinks[i]
-		} else {
-			commentlinks[i] = "No comments."
-		}
-	}
-	return titles, storylinks, commentlinks
-}
-
-func appendArticle(str, title, storylink, commentlink string) string {
-	article := fmt.Sprintf("\n| %s |\n| :-- |\n| %s |\n| %s |\n",
-		title, storylink, commentlink)
-	return str + article
+func appendArticleTable(str string, article hackerNews.HNArticle) string {
+	return str + article.GetTable()
 }
 
 func contains(arr []int, search int) bool {
@@ -207,28 +169,22 @@ func main() {
 	}
 	defer outputPath.Close()
 
-	titles, storylinks, commentlinks := scrapeHN()
+	articles := hackerNews.ScrapeHN()
 
 	if s {
 		for i := 0; i < 30; i++ {
-			fmt.Printf("%d. %s\n%s\n%s\n\n",
-				i+1,
-				titles[i],
-				storylinks[i],
-				commentlinks[i])
+			data := articles[i].GetInfo()
+			fmt.Printf("%d. %s\n%s\n%s\n\n", i+1, data[0], data[1], data[2])
 		}
+		return
 	} else if k != "" {
 		fmt.Printf("Searching for articles with '%s' in the title.\n", k)
 
 		output := ""
 		articlesFound := 0
 		for i := 0; i < 30; i++ {
-			if strings.Contains(strings.ToLower(titles[i]), k) {
-				output = appendArticle(
-					output,
-					titles[i],
-					storylinks[i],
-					commentlinks[i])
+			if articles[i].TitleContains(k) {
+				output = appendArticleTable(output, articles[i])
 				articlesFound++
 			}
 		}
@@ -240,8 +196,8 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		for i, title := range titles {
-			fmt.Printf("%d %s\n", i+1, title)
+		for i, article := range articles {
+			fmt.Printf("%d %s\n", i+1, article.Title)
 		}
 
 		var userInput string
@@ -260,11 +216,7 @@ func main() {
 
 		var output string
 		for _, sel := range selections {
-			output = appendArticle(
-				output,
-				titles[sel-1],
-				storylinks[sel-1],
-				commentlinks[sel-1])
+			output = appendArticleTable(output, articles[sel-1])
 		}
 
 		_, err = outputPath.Write([]byte(output))
