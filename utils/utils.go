@@ -10,9 +10,24 @@ import (
 	"strconv"
 	"regexp"
 	"hypermark/hackerNews"
+	"github.com/atotto/clipboard"
 )
 
 const EARLY_EXIT = "42"
+
+func Write(
+	outputPath *os.File,
+	output string,
+	clipboardOut bool,
+) (string, error) {
+	if !clipboardOut {
+		_, err := outputPath.Write([]byte(output))
+		return outputPath.Name(), err
+	} else {
+		err := clipboard.WriteAll(output)
+		return "system clipboard", err
+	}
+}
 
 func expandTilde(path string) string {
 	usr, _ := user.Current()
@@ -230,8 +245,9 @@ func ChooseOutputPath(
 	tail []string,
 	overwriteFile bool,
 	writeToStdout bool,
+	clipboardOut bool,
 ) (outputPath *os.File, err error) {
-	if writeToStdout {
+	if writeToStdout || clipboardOut {
 		outputPath, err = os.Stdout, nil
 	} else if len(tail) > 0 {
 		// A specific file was specified.

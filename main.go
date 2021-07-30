@@ -8,6 +8,7 @@ import (
 	"os"
 	"hypermark/hackerNews"
 	"hypermark/utils"
+	"hypermark/urlMode"
 )
 
 // flags
@@ -15,24 +16,31 @@ var k string
 var o bool
 var s bool
 var stdout bool
+var url bool
+var clipboardOut bool
 func init() {
 	// k and s are mutually exclusive.
 	flag.StringVar(&k, "k", "",
-		"Save articles based on a keyword in the title.")
+		"Save HN articles based on a keyword in the title.")
 	flag.BoolVar(&o, "o", false,
 		"Overwrite the target file instead of appending to the end.")
-	flag.BoolVar(&s, "s", false, "Show all articles and exit.")
+	flag.BoolVar(&s, "s", false, "Show all HN articles and exit.")
 	flag.BoolVar(&stdout, "stdout", false, "Write output to stdout.")
+	flag.BoolVar(&url, "url", false,
+		"Use a URL from the system clipboard.")
+	flag.BoolVar(&clipboardOut, "c", false,
+		"Input will be written to the system clipboard.")
 }
 
 func main() {
 	flag.Parse()
-
 	var outputPath *os.File
 	var err error
 
 	// outputPath is either a user-provided file or Stdout.
-	outputPath, err = utils.ChooseOutputPath(flag.Args(), o, stdout)
+	// Accommodations made for system clipboard.
+	outputPath, err = utils.ChooseOutputPath(
+						flag.Args(), o, stdout, clipboardOut)
 	if err != nil {
 		if err.Error() == utils.EARLY_EXIT {
 			return
@@ -47,7 +55,6 @@ func main() {
 			data := articles[i].GetInfo()
 			fmt.Printf("%d. %s\n%s\n%s\n\n", i+1, data[0], data[1], data[2])
 		}
-		return
 	} else if k != "" {
 		fmt.Printf("Searching for articles with '%s' in the title.\n", k)
 
@@ -59,13 +66,29 @@ func main() {
 				articlesFound++
 			}
 		}
-		fmt.Printf("%d articles found. Writing output to %s.\n",
-			articlesFound,
-			outputPath.Name())
-		_, err := outputPath.Write([]byte(output))
+		writtenTo, err := utils.Write(outputPath, output, clipboardOut)
 		if err != nil {
 			log.Fatal(err)
 		}
+		fmt.Printf("%d articles found. Writing output to %s.\n",
+			articlesFound,
+			writtenTo,
+		)
+	} else if url {
+		datamark, err := urlMode.DatamarkFromURL()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		output := datamark.Table
+		writtenTo, err := utils.Write(outputPath, output,  clipboardOut)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("datamark for %s was written to %s.\n",
+			datamark.URL,
+			writtenTo,
+		)
 	} else {
 		for i, article := range articles {
 			fmt.Printf("%d %s\n", i+1, article.Title)
@@ -90,14 +113,14 @@ func main() {
 			output = utils.AppendArticleTable(output, articles[sel-1])
 		}
 
-		_, err = outputPath.Write([]byte(output))
+		writtenTo, err := utils.Write(outputPath, output, clipboardOut)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Printf(
 			"%d articles written to %s.\n",
 			len(selections),
-			outputPath.Name(),
+			writtenTo,
 		)
 	}
 }

@@ -9,8 +9,8 @@ import (
 const HN_URL = "https://news.ycombinator.com/"
 
 type HNArticle struct {
-	Title string
-	StoryLink string
+	Title       string
+	StoryLink   string
 	CommentLink string
 }
 
@@ -22,11 +22,11 @@ func (article HNArticle) GetInfo() []string {
 func (article HNArticle) GetTable() string {
 	data := article.GetInfo()
 	table := fmt.Sprintf("\n| %s |\n| :-- |\n| %s |\n| %s |\n",
-						 data[0], data[1], data[2])
+		data[0], data[1], data[2])
 	return table
 }
 
-// Returns whether or not the title of the article contains the search 
+// Returns whether or not the title of the article contains the search
 // string. Can be improved upon later -> punctuation can create annoying
 // situations.
 func (article HNArticle) TitleContains(keyword string) bool {
