@@ -2,13 +2,13 @@ package urlMode
 
 import (
 	"fmt"
-	"log"
-	"github.com/gocolly/colly"
 	"github.com/atotto/clipboard"
+	"github.com/gocolly/colly"
+	"log"
 )
 
 type GenericDatamark struct {
-	URL string
+	URL   string
 	Title string
 	Table string
 }
@@ -33,8 +33,9 @@ func TestingStub() {
 	}
 }
 
-func createDatamark(url string) GenericDatamark {
+func createDatamark(url string) (GenericDatamark, error) {
 	datamark := GenericDatamark{URL: url}
+	var retErr error
 	c := colly.NewCollector()
 
 	c.OnRequest(func(r *colly.Request) {
@@ -45,24 +46,21 @@ func createDatamark(url string) GenericDatamark {
 		datamark.Title = e.Text
 	})
 
+	c.OnError(func(r *colly.Response, err error) {
+		retErr = err
+	})
+
 	c.Visit(url)
 	datamark.createTable()
-	return datamark
-}
 
-func ClipToClip() {
-	url, err := clipboard.ReadAll()
-	if err != nil {
-		log.Fatal(err)
-	}
-	datamark := createDatamark(url)
-	err = clipboard.WriteAll(datamark.Table)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return datamark, retErr
 }
 
 func DatamarkFromURL() (GenericDatamark, error) {
 	url, err := clipboard.ReadAll()
-	return createDatamark(url), err
+	if err != nil {
+		return GenericDatamark{}, err
+	}
+
+	return createDatamark(url)
 }

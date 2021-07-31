@@ -9,6 +9,7 @@ import (
 	"hypermark/hackerNews"
 	"hypermark/utils"
 	"hypermark/urlMode"
+	"hypermark/frontend"
 )
 
 // flags
@@ -18,6 +19,7 @@ var s bool
 var stdout bool
 var url bool
 var clipboardOut bool
+var tui bool
 func init() {
 	// k and s are mutually exclusive.
 	flag.StringVar(&k, "k", "",
@@ -30,6 +32,8 @@ func init() {
 		"Use a URL from the system clipboard.")
 	flag.BoolVar(&clipboardOut, "c", false,
 		"Input will be written to the system clipboard.")
+	flag.BoolVar(&tui, "tui", false,
+		"Use TUI.")
 }
 
 func main() {
@@ -48,6 +52,29 @@ func main() {
 		log.Fatal(err)
 	}
 	defer outputPath.Close()
+
+	if tui {
+		frontend.Start()
+		return
+	}
+
+	if url {
+		datamark, err := urlMode.DatamarkFromURL()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		output := datamark.Table
+		writtenTo, err := utils.Write(outputPath, output,  clipboardOut)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("datamark for %s was written to %s.\n",
+			datamark.URL,
+			writtenTo,
+		)
+		return
+	}
 
 	articles := hackerNews.ScrapeHN()
 	if s {
@@ -72,21 +99,6 @@ func main() {
 		}
 		fmt.Printf("%d articles found. Writing output to %s.\n",
 			articlesFound,
-			writtenTo,
-		)
-	} else if url {
-		datamark, err := urlMode.DatamarkFromURL()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		output := datamark.Table
-		writtenTo, err := utils.Write(outputPath, output,  clipboardOut)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("datamark for %s was written to %s.\n",
-			datamark.URL,
 			writtenTo,
 		)
 	} else {
