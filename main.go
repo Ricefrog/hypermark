@@ -54,6 +54,8 @@ func main() {
 	defer outputPath.Close()
 
 	if tui {
+		frontend.SetOutputPath(outputPath, clipboardOut)
+		frontend.ClearScreen()
 		frontend.Start()
 		return
 	}
