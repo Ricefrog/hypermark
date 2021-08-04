@@ -15,6 +15,14 @@ import (
 
 const EARLY_EXIT = "42"
 
+func ArticlesToTable(articles []hackerNews.HNArticle) string {
+	var output string
+	for _, article := range articles {
+		output = AppendArticleTable(output, article)
+	}
+	return output
+}
+
 func Write(
 	outputPath *os.File,
 	output string,

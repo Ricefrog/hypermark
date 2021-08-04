@@ -2,8 +2,11 @@ package frontend
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"hypermark/frontend/styles"
+	"hypermark/utils"
+	hn "hypermark/hackerNews"
 	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -79,6 +82,25 @@ func updateArticleMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					state.selected[state.cursorIndex] = struct{}{}
 				}
+			} else { // If "enter" is pressed on the checkout prompt
+				articles := make([]hn.HNArticle, 0)
+				for i, _ := range state.selected {
+					// Append each HNArticle to the list.
+					articles = append(articles, state.articles[i])
+				}
+
+				output := utils.ArticlesToTable(articles)
+				writtenTo, err := utils.Write(
+					m.outputPath, output, m.clipboardOut,
+				)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Printf(
+					"%d articles written to %s.\n",
+					len(articles),
+					writtenTo,
+				)
 			}
 		}
 	}

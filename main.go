@@ -67,7 +67,7 @@ func main() {
 		}
 
 		output := datamark.Table
-		writtenTo, err := utils.Write(outputPath, output,  clipboardOut)
+		writtenTo, err := utils.Write(outputPath, output, clipboardOut)
 		if err != nil {
 			log.Fatal(err)
 		}
