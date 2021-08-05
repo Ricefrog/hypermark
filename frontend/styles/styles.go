@@ -11,6 +11,9 @@ var (
 	OrangeRed = "#FF4500"
 	JustBlue = "#0000FF"
 	Crimson = "#DC143C"
+	MatureCrimson = "#9a031e"
+	Burgundy = "#5f0f40"
+	PalestBlue = "#C6E2FF"
 
 	headerStyle = lipgloss.NewStyle().
 		Bold(true).
@@ -46,6 +49,18 @@ var (
 		BorderStyle(lipgloss.DoubleBorder()).
 		BorderForeground(lipgloss.Color(ProtonPurple)).
 		Padding(1)
+
+	PromptStyle = lipgloss.NewStyle().
+		Bold(true).
+		Padding(2).
+		Foreground(lipgloss.Color(MatureCrimson)).
+		Background(lipgloss.Color(CosmicLatte)).
+		BorderForeground(lipgloss.Color(JustBlue)).
+		BorderStyle(lipgloss.RoundedBorder())
+
+	CursorStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color(AquaMenthe))
 )
 
 func Highlighted(color string) lipgloss.Style {

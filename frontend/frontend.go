@@ -2,16 +2,30 @@ package frontend
 
 import (
 	"fmt"
-	"os"
 	tea "github.com/charmbracelet/bubbletea"
 	hn "hypermark/hackerNews"
+	"os"
 )
 
-type articleMenu struct {
-	articles []hn.HNArticle
-	selected map[int]struct{}
+type ViewType int
 
+const (
+	startView ViewType = iota
+	articleView
+	promptView
+)
+
+type promptMenu struct {
+	prompt      string
+	options     []string
 	cursorIndex int
+}
+
+type articleMenu struct {
+	articles    []hn.HNArticle
+	selected    map[int]struct{}
+	cursorIndex int
+	pageIndex   int
 }
 
 func initializeArticles(m *model) {
@@ -19,17 +33,18 @@ func initializeArticles(m *model) {
 }
 
 type startMenu struct {
-	choices []string
+	choices     []string
 	cursorIndex int
 }
 
 type model struct {
 	clipboardOut bool
-	outputPath *os.File
+	outputPath   *os.File
 
-	currentView int
-	startMenu startMenu
+	currentView ViewType    // Use this to choose which view to show.
+	startMenu   startMenu
 	articleMenu articleMenu
+	promptMenu  promptMenu
 }
 
 var initialModel = model{
@@ -37,7 +52,7 @@ var initialModel = model{
 		choices: []string{
 			"View hackernews articles",
 			"Manage hypermarks",
-			"Change hyperpaths",
+			"Edit hyperpaths",
 		},
 	},
 	articleMenu: articleMenu{
@@ -59,26 +74,38 @@ func ClearScreen() {
 	}
 }
 
+// Remove previous state
+func (m *model) Wipe() {
+	m.articleMenu = articleMenu{
+		selected: make(map[int]struct{}),
+	}
+	m.promptMenu = promptMenu{}
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.currentView {
-	case 0:
+	case startView:
 		return updateStartMenu(m, msg)
-	case 1:
+	case articleView:
 		return updateArticleMenu(m, msg)
+	case promptView:
+		return updatePromptMenu(m, msg)
 	}
 	return updateStartMenu(m, msg)
 }
 
 func (m model) View() string {
 	switch m.currentView {
-	case 0:
+	case startView:
 		return startMenuView(m)
-	case 1:
+	case articleView:
 		return articleMenuView(m)
+	case promptView:
+		return promptMenuView(m)
 	}
 	return startMenuView(m)
 }

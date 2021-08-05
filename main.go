@@ -4,22 +4,26 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"hypermark/frontend"
+	"hypermark/hackerNews"
+	"hypermark/urlMode"
+	"hypermark/utils"
 	"log"
 	"os"
-	"hypermark/hackerNews"
-	"hypermark/utils"
-	"hypermark/urlMode"
-	"hypermark/frontend"
 )
 
 // flags
-var k string
-var o bool
-var s bool
-var stdout bool
-var url bool
-var clipboardOut bool
-var tui bool
+var (
+	k            string
+	o            bool
+	s            bool
+	stdout       bool
+	url          bool
+	clipboardOut bool
+	tui          bool
+	tuiTest      bool
+)
+
 func init() {
 	// k and s are mutually exclusive.
 	flag.StringVar(&k, "k", "",
@@ -34,6 +38,8 @@ func init() {
 		"Input will be written to the system clipboard.")
 	flag.BoolVar(&tui, "tui", false,
 		"Use TUI.")
+	flag.BoolVar(&tuiTest, "tuiTest", false,
+		"Run stubs to test TUI styling.")
 }
 
 func main() {
@@ -44,7 +50,7 @@ func main() {
 	// outputPath is either a user-provided file or Stdout.
 	// Accommodations made for system clipboard.
 	outputPath, err = utils.ChooseOutputPath(
-						flag.Args(), o, stdout, clipboardOut)
+		flag.Args(), o, stdout, clipboardOut)
 	if err != nil {
 		if err.Error() == utils.EARLY_EXIT {
 			return
@@ -57,6 +63,11 @@ func main() {
 		frontend.SetOutputPath(outputPath, clipboardOut)
 		frontend.ClearScreen()
 		frontend.Start()
+		return
+	}
+
+	if tuiTest {
+		frontend.Test()
 		return
 	}
 
