@@ -22,6 +22,7 @@ var (
 	clipboardOut bool
 	tui          bool
 	tuiTest      bool
+	test         bool
 )
 
 func init() {
@@ -40,6 +41,8 @@ func init() {
 		"Use TUI.")
 	flag.BoolVar(&tuiTest, "tuiTest", false,
 		"Run stubs to test TUI styling.")
+	flag.BoolVar(&test, "test", false,
+		"Run test stubs.")
 }
 
 func main() {
@@ -68,6 +71,11 @@ func main() {
 
 	if tuiTest {
 		frontend.Test()
+		return
+	}
+
+	if test {
+		utils.TestStub()
 		return
 	}
 

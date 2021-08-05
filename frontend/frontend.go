@@ -2,50 +2,12 @@ package frontend
 
 import (
 	"fmt"
+	"log"
+	"hypermark/utils"
 	tea "github.com/charmbracelet/bubbletea"
 	hn "hypermark/hackerNews"
 	"os"
 )
-
-type ViewType int
-
-const (
-	startView ViewType = iota
-	articleView
-	promptView
-)
-
-type promptMenu struct {
-	prompt      string
-	options     []string
-	cursorIndex int
-}
-
-type articleMenu struct {
-	articles    []hn.HNArticle
-	selected    map[int]struct{}
-	cursorIndex int
-	pageIndex   int
-}
-
-func initializeArticles(m *model) {
-	m.articleMenu.articles = hn.ScrapeHN()
-}
-
-type startMenu struct {
-	choices     []string
-	cursorIndex int
-}
-
-type model struct {
-	clipboardOut bool
-	outputPath   *os.File
-
-	currentView ViewType    // Use this to choose which view to show.
-	startMenu   startMenu
-	articleMenu articleMenu
-	promptMenu  promptMenu
-}
 
 var initialModel = model{
 	startMenu: startMenu{
@@ -74,6 +36,18 @@ func ClearScreen() {
 	}
 }
 
+func (m *model) initializeArticles() {
+	m.articleMenu.articles = hn.ScrapeHN()
+}
+
+func (m *model) loadHyperpaths() {
+	hp, err := utils.GetAllHyperpaths()
+	if err != nil {
+		log.Fatal(err)
+	}
+	m.hyperpathsMenu.hyperpaths = hp
+}
+
 // Remove previous state
 func (m *model) Wipe() {
 	m.articleMenu = articleMenu{
@@ -94,6 +68,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updateArticleMenu(m, msg)
 	case promptView:
 		return updatePromptMenu(m, msg)
+	case hyperpathsView:
+		return updateHyperpathsMenu(m, msg)
 	}
 	return updateStartMenu(m, msg)
 }
@@ -106,6 +82,8 @@ func (m model) View() string {
 		return articleMenuView(m)
 	case promptView:
 		return promptMenuView(m)
+	case hyperpathsView:
+		return hyperpathsMenuView(m)
 	}
 	return startMenuView(m)
 }

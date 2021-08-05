@@ -32,7 +32,10 @@ func updateStartMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch state.cursorIndex {
 			case 0:
 				m.currentView = articleView
-				initializeArticles(&m)
+				m.initializeArticles()
+			case 2:
+				m.currentView = hyperpathsView
+				m.loadHyperpaths()
 			}
 		}
 	}
@@ -230,5 +233,54 @@ func promptMenuView(m model) string {
 		}
 		s += fmt.Sprintf("%s%s\n", cursor, option)
 	}
+	return s
+}
+
+func updateHyperpathsMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	state := &m.hyperpathsMenu
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "up", "k":
+			if state.cursorIndex > 0 {
+				state.cursorIndex--
+			}
+		case "down", "j":
+			if state.cursorIndex < len(state.hyperpaths)-1 {
+				state.cursorIndex++
+			}
+		}
+	}
+
+	return m, nil
+}
+
+func hyperpathsMenuView(m model) string {
+	state := m.hyperpathsMenu
+
+	var s string
+
+	var del string
+	if len(state.hyperpaths) > 1{
+		del = "| Delete (d)"
+	}
+	s += fmt.Sprintf("\nhyperpaths[%d]: Edit (e) %s\n\n",
+		state.cursorIndex,
+		del,
+	)
+
+	for i, hyperpath := range state.hyperpaths {
+		cursor := ""
+		if state.cursorIndex == i {
+			cursor = templates.Cursor()
+			hyperpath = styles.HRender(styles.ProtonPurple, hyperpath)
+		}
+		s += fmt.Sprintf("%s%d: %s\n", cursor, i, hyperpath)
+	}
+
+	s += "\nAdd new hyperpath (n)\n"
 	return s
 }

@@ -13,7 +13,10 @@ import (
 	"github.com/atotto/clipboard"
 )
 
-const EARLY_EXIT = "42"
+const (
+	EARLY_EXIT = "42"
+	HP_FILEPATH = "./hyperpaths"
+)
 
 func ArticlesToTable(articles []hackerNews.HNArticle) string {
 	var output string
@@ -269,4 +272,138 @@ func ChooseOutputPath(
 		outputPath, err = getFile(hyperpath, overwriteFile)
 	}
 	return outputPath, err
+}
+
+func writeHyperpaths(hyperpaths []string) error {
+	var err error
+	// remove and create hyperpaths file
+	if err = os.Remove(HP_FILEPATH); err != nil {
+		return err
+	}
+	hyperpathFile, err := os.OpenFile(
+		HP_FILEPATH,
+		os.O_CREATE|os.O_WRONLY,
+		0666,
+	)
+	if err != nil {
+		return err
+	}
+
+	for i, hyperpath := range hyperpaths {
+		line := fmt.Sprintf("%d: %s\n", i, hyperpath)
+		hyperpathFile.WriteString(line)
+	}
+	return nil
+}
+
+func changeNthHyperpath(path string, n int) error {
+	hyperpaths, err := GetAllHyperpaths()
+	if err != nil {
+		return err
+	}
+	if n > len(hyperpaths) {
+		errorString := fmt.Sprintf("Cannot edit hyperpath[%d]: Out of range", n)
+		return errors.New(errorString)
+	}
+
+	// Append new path or replace nth path.
+	if n == len(hyperpaths) {
+		hyperpaths = append(hyperpaths, path)
+	} else {
+		hyperpaths[n] = path
+	}
+
+	return writeHyperpaths(hyperpaths)
+}
+
+func pruneForHyperpaths(rawString string) []string {
+	hyperpaths := make([]string, 0)
+	hyperpathRegex := regexp.MustCompile(`\d+: .+`)
+
+	lines := strings.Split(rawString, "\n")
+	for _, line := range lines {
+		match := hyperpathRegex.FindString(line)
+		if match != "" {
+			split := strings.Split(match, " ")
+			hyperpaths = append(hyperpaths, split[1])
+		}
+	}
+
+	return hyperpaths
+}
+
+func GetAllHyperpaths() ([]string, error) {
+	var hyperpathsFile *os.File
+	var err error
+
+	if !doesFileExist(HP_FILEPATH) {
+		return []string{}, errors.New("hyperpaths file does not exist.")
+	} else {
+		hyperpathsFile, err = os.OpenFile(
+			HP_FILEPATH,
+			os.O_RDONLY,
+			0666,
+		)
+		if err != nil {
+			return []string{}, err
+		}
+	}
+
+	data := make([]byte, 1024)
+	var bytesRead int
+	bytesRead, err = hyperpathsFile.Read(data)
+	if bytesRead == 0 {
+		return []string{}, errors.New("hyperpaths file is empty.")
+	}
+	if err != nil {
+		return []string{}, err
+	}
+
+	hyperpaths := pruneForHyperpaths(string(data))
+	if len(hyperpaths) == 0 {
+		return hyperpaths, errors.New("No hyperpaths found.")
+	}
+	return hyperpaths, nil
+}
+
+func TestStub() {
+	fmt.Println("GetAllHyperpaths()")
+	hyperpaths, err := GetAllHyperpaths()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for i, p := range hyperpaths {
+		fmt.Printf("%d: %s\n", i, p)
+	}
+
+	fmt.Println("changeNthHyperpath(\"ploopy\", 1)")
+	err = changeNthHyperpath("ploopy", 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("GetAllHyperpaths()")
+	hyperpaths, err = GetAllHyperpaths()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for i, p := range hyperpaths {
+		fmt.Printf("%d: %s\n", i, p)
+	}
+
+	newHyperpaths := []string{"testing1", "testing2"}
+	fmt.Println("writeHyperpaths(newHyperpaths)")
+	err = writeHyperpaths(newHyperpaths)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("GetAllHyperpaths()")
+	hyperpaths, err = GetAllHyperpaths()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for i, p := range hyperpaths {
+		fmt.Printf("%d: %s\n", i, p)
+	}
 }
