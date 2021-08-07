@@ -244,6 +244,9 @@ func updateHyperpathsMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+		case "esc":
+			m.currentView = startView
+			return m, nil
 		case "up", "k":
 			if state.cursorIndex > 0 {
 				state.cursorIndex--
@@ -252,6 +255,15 @@ func updateHyperpathsMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			if state.cursorIndex < len(state.hyperpaths)-1 {
 				state.cursorIndex++
 			}
+		case "e":
+			selectedHP := state.hyperpaths[state.cursorIndex]
+			placeholder := selectedHP
+			prompt := fmt.Sprintf("Editing hyperpath[%d]", state.cursorIndex)
+			footer := "Submit (enter) | Go back (esc)"
+
+			state.editHyperpath.oldHyperpath = selectedHP
+			m.initPromptAndTextInput(placeholder, prompt, footer)
+			m.currentView = editHPView
 		}
 	}
 
@@ -281,28 +293,39 @@ func hyperpathsMenuView(m model) string {
 		s += fmt.Sprintf("%s%d: %s\n", cursor, i, hyperpath)
 	}
 
-	s += "\nAdd new hyperpath (n)\n"
+	s += "\nAdd new hyperpath (n)\nGo back (esc)\n"
 	return s
 }
 
 func updateEditHyperpath(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
-	state := &m.promptAndTextInput
+	stateA := &m.promptAndTextInput
+	stateB := &m.hyperpathsMenu.editHyperpath
+	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
-		case "up", "k":
-			if state.cursorIndex > 0 {
-				state.cursorIndex--
-			}
-		case "down", "j":
-			if state.cursorIndex < len(state.hyperpaths)-1 {
-				state.cursorIndex++
-			}
+		case "esc":
+			m.currentView = hyperpathsView
+			return m, nil
+		case "enter":
+			stateB.newHyperpath = stateA.textInput.Value()
 		}
 	}
 
-	return m, nil
+	stateA.textInput, cmd = stateA.textInput.Update(msg)
+	return m, cmd
+}
+
+func editHyperpathView(m model) string {
+	state := m.promptAndTextInput
+
+	return fmt.Sprintf(
+		"%s\n\n%s\n\n%s",
+		state.prompt,
+		state.textInput.View(),
+		state.footer,
+	)
 }

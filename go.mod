@@ -8,6 +8,7 @@ require (
 	github.com/antchfx/xmlquery v1.3.6 // indirect
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/charmbracelet/bubbles v0.8.0 // indirect
 	github.com/charmbracelet/bubbletea v0.14.1 // indirect
 	github.com/charmbracelet/lipgloss v0.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect

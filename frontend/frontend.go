@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"hypermark/utils"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	hn "hypermark/hackerNews"
 	"os"
@@ -49,8 +50,7 @@ func (m *model) loadHyperpaths() {
 }
 
 func (m *model) initPromptAndTextInput(
-	placeholder, prompt string,
-	options []string,
+	placeholder, prompt, footer string,
 ) {
 	ti := textinput.NewModel()
 	ti.Placeholder = placeholder
@@ -60,7 +60,7 @@ func (m *model) initPromptAndTextInput(
 
 	m.promptAndTextInput.textInput = ti
 	m.promptAndTextInput.prompt = prompt
-	m.promptAndTextInput.options = options
+	m.promptAndTextInput.footer = footer
 }
 
 // Remove previous state
@@ -85,6 +85,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updatePromptMenu(m, msg)
 	case hyperpathsView:
 		return updateHyperpathsMenu(m, msg)
+	case editHPView:
+		return updateEditHyperpath(m, msg)
 	}
 	return updateStartMenu(m, msg)
 }
@@ -99,6 +101,8 @@ func (m model) View() string {
 		return promptMenuView(m)
 	case hyperpathsView:
 		return hyperpathsMenuView(m)
+	case editHPView:
+		return editHyperpathView(m)
 	}
 	return startMenuView(m)
 }

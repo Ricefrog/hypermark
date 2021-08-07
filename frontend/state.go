@@ -14,14 +14,14 @@ const (
 	articleView
 	promptView
 	hyperpathsView
-	editHyperpathView
+	editHPView
 )
 
-// prompt and text input
+// Generic prompt and text input
 type promptAndTextInput struct {
 	textInput   textinput.Model
 	prompt      string
-	options     []string
+	footer      string
 	cursorIndex int
 }
 
@@ -33,9 +33,15 @@ type promptAndTextInput struct {
 	- Swap the indices of hyperpaths
 	- Return to the start screen
 */
+type editHyperpath struct {
+	oldHyperpath string
+	newHyperpath string
+}
+
 type hyperpathsMenu struct {
-	hyperpaths  []string
-	cursorIndex int
+	hyperpaths    []string
+	editHyperpath editHyperpath
+	cursorIndex   int
 }
 
 type promptMenu struct {
