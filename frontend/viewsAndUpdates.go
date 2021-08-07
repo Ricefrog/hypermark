@@ -284,3 +284,25 @@ func hyperpathsMenuView(m model) string {
 	s += "\nAdd new hyperpath (n)\n"
 	return s
 }
+
+func updateEditHyperpath(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	state := &m.promptAndTextInput
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		case "up", "k":
+			if state.cursorIndex > 0 {
+				state.cursorIndex--
+			}
+		case "down", "j":
+			if state.cursorIndex < len(state.hyperpaths)-1 {
+				state.cursorIndex++
+			}
+		}
+	}
+
+	return m, nil
+}

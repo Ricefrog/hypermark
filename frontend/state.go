@@ -2,6 +2,7 @@
 package frontend
 
 import (
+	"github.com/charmbracelet/bubbles/textinput"
 	hn "hypermark/hackerNews"
 	"os"
 )
@@ -13,7 +14,16 @@ const (
 	articleView
 	promptView
 	hyperpathsView
+	editHyperpathView
 )
+
+// prompt and text input
+type promptAndTextInput struct {
+	textInput   textinput.Model
+	prompt      string
+	options     []string
+	cursorIndex int
+}
 
 /*
 	For CLI mode, hyperpaths[0] is what is always used/edited.
@@ -24,7 +34,7 @@ const (
 	- Return to the start screen
 */
 type hyperpathsMenu struct {
-	hyperpaths []string
+	hyperpaths  []string
 	cursorIndex int
 }
 
@@ -50,9 +60,10 @@ type model struct {
 	clipboardOut bool
 	outputPath   *os.File
 
-	currentView ViewType    // Use this to choose which view to show.
-	startMenu   startMenu
-	articleMenu articleMenu
-	promptMenu  promptMenu
-	hyperpathsMenu hyperpathsMenu
+	currentView        ViewType // Use this to choose which view to show.
+	startMenu          startMenu
+	articleMenu        articleMenu
+	promptMenu         promptMenu
+	hyperpathsMenu     hyperpathsMenu
+	promptAndTextInput promptAndTextInput
 }

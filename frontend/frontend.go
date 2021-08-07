@@ -48,6 +48,21 @@ func (m *model) loadHyperpaths() {
 	m.hyperpathsMenu.hyperpaths = hp
 }
 
+func (m *model) initPromptAndTextInput(
+	placeholder, prompt string,
+	options []string,
+) {
+	ti := textinput.NewModel()
+	ti.Placeholder = placeholder
+	ti.Focus()
+	ti.CharLimit = 156
+	ti.Width = 60
+
+	m.promptAndTextInput.textInput = ti
+	m.promptAndTextInput.prompt = prompt
+	m.promptAndTextInput.options = options
+}
+
 // Remove previous state
 func (m *model) Wipe() {
 	m.articleMenu = articleMenu{
