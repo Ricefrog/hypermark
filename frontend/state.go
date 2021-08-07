@@ -34,8 +34,7 @@ type promptAndTextInput struct {
 	- Return to the start screen
 */
 type editHyperpath struct {
-	oldHyperpath string
-	newHyperpath string
+	index int
 }
 
 type hyperpathsMenu struct {

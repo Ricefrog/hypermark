@@ -52,7 +52,7 @@ func startMenuView(m model) string {
 	}
 
 	s := "\nhypermark\n\n"
-	s += fmt.Sprintf("output path: %s\n\n", outstr)
+	s += fmt.Sprintf("Writing to -> %s\n\n", outstr)
 	for i, choice := range state.choices {
 		if i == state.cursorIndex {
 			s += templates.Cursor()
@@ -92,7 +92,7 @@ func updateArticleMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "right", "l":
 			if state.pageIndex == 0 {
 				state.pageIndex++
-				state.cursorIndex = 16
+				state.cursorIndex = 15
 			}
 		case "left", "h":
 			if state.pageIndex == 1 {
@@ -261,7 +261,7 @@ func updateHyperpathsMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			prompt := fmt.Sprintf("Editing hyperpath[%d]", state.cursorIndex)
 			footer := "Submit (enter) | Go back (esc)"
 
-			state.editHyperpath.oldHyperpath = selectedHP
+			state.editHyperpath.index = state.cursorIndex
 			m.initPromptAndTextInput(placeholder, prompt, footer)
 			m.currentView = editHPView
 		}
@@ -274,11 +274,11 @@ func hyperpathsMenuView(m model) string {
 	state := m.hyperpathsMenu
 
 	var s string
-
 	var del string
 	if len(state.hyperpaths) > 1{
 		del = "| Delete (d)"
 	}
+
 	s += fmt.Sprintf("\nhyperpaths[%d]: Edit (e) %s\n\n",
 		state.cursorIndex,
 		del,
@@ -311,7 +311,12 @@ func updateEditHyperpath(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.currentView = hyperpathsView
 			return m, nil
 		case "enter":
-			stateB.newHyperpath = stateA.textInput.Value()
+			newHyperpath := stateA.textInput.Value()
+			written, valid := utils.EditNthHyperpath(newHyperpath, stateB.index)
+			if written && valid {
+				m.loadHyperpaths()
+				m.currentView = hyperpathsView
+			}
 		}
 	}
 

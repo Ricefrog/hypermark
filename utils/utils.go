@@ -58,6 +58,32 @@ func contains(arr []int, search int) bool {
 	return false
 }
 
+func isDirectory(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return fileInfo.IsDir()
+}
+
+func PathExists(path string) bool {
+	pathExists := true
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			pathExists = false
+		}
+	}
+	return pathExists
+}
+
+func removeBasename(path string) (retPath string) {
+	parts := strings.Split(path, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		retPath += parts[i]+"/"
+	}
+	return retPath
+}
+
 func removeDuplicates(ints []int) []int {
 	ret := make([]int, 0)
 	for _, num := range ints {
@@ -135,21 +161,11 @@ func overwriteMode(
 	return outputPath, err
 }
 
-func doesFileExist(fileName string) bool {
-	fileExists := true
-	if _, err := os.Stat(fileName); err != nil {
-		if os.IsNotExist(err) {
-			fileExists = false
-		}
-	}
-	return fileExists
-}
-
 func getFile(
 	fileName string,
 	overwriteFile bool,
 ) (outputPath *os.File, err error) {
-	fileExists := doesFileExist(fileName)
+	fileExists := PathExists(fileName)
 	// File will be overwritten.
 	if overwriteFile {
 		outputPath, err = overwriteMode(fileExists, fileName)
@@ -184,7 +200,7 @@ func getHyperpath() (string, error) {
 	hyperpathFilePath := "env/hyperpath"
 
 	// Create the hyperpathFile if it doesn't exist.
-	if !doesFileExist(hyperpathFilePath) {
+	if !PathExists(hyperpathFilePath) {
 		hyperpathFile, err = os.OpenFile(
 			hyperpathFilePath,
 			os.O_CREATE,
@@ -229,7 +245,7 @@ func getHyperpath() (string, error) {
 			return "", err
 		}
 	}
-	for !doesFileExist(hyperpath) {
+	for !PathExists(hyperpath) {
 		fmt.Printf("\nInvalid file path: %s\n", hyperpath)
 		hyperpath, hyperpathChanged, err  = getHyperpathFromUser()
 		if err != nil {
@@ -336,7 +352,7 @@ func GetAllHyperpaths() ([]string, error) {
 	var hyperpathsFile *os.File
 	var err error
 
-	if !doesFileExist(HP_FILEPATH) {
+	if !PathExists(HP_FILEPATH) {
 		return []string{}, errors.New("hyperpaths file does not exist.")
 	} else {
 		hyperpathsFile, err = os.OpenFile(
@@ -366,44 +382,31 @@ func GetAllHyperpaths() ([]string, error) {
 	return hyperpaths, nil
 }
 
+func EditNthHyperpath(path string, n int) (written, valid bool) {
+	if strings.Contains(path, "~") {
+		path = expandTilde(path)
+	}
+	// Check if the file exists. If so edit the hyperpath.
+	if PathExists(path) && !isDirectory(path) {
+		err := changeNthHyperpath(path, n)
+		if err != nil {
+			log.Fatal(err)
+		}
+		written, valid = true, true
+		return
+	}
+	// If the file does not exist, check if the path to its
+	// directory is valid. 
+	pathToDir := removeBasename(path)
+	if PathExists(pathToDir) && isDirectory(pathToDir) {
+		valid = true
+		return
+	}
+	return
+}
+
 func TestStub() {
-	fmt.Println("GetAllHyperpaths()")
-	hyperpaths, err := GetAllHyperpaths()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for i, p := range hyperpaths {
-		fmt.Printf("%d: %s\n", i, p)
-	}
-
-	fmt.Println("changeNthHyperpath(\"ploopy\", 1)")
-	err = changeNthHyperpath("ploopy", 1)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("GetAllHyperpaths()")
-	hyperpaths, err = GetAllHyperpaths()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for i, p := range hyperpaths {
-		fmt.Printf("%d: %s\n", i, p)
-	}
-
-	newHyperpaths := []string{"testing1", "testing2"}
-	fmt.Println("writeHyperpaths(newHyperpaths)")
-	err = writeHyperpaths(newHyperpaths)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("GetAllHyperpaths()")
-	hyperpaths, err = GetAllHyperpaths()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for i, p := range hyperpaths {
-		fmt.Printf("%d: %s\n", i, p)
-	}
+	path := "/home/severian/terminus_est/tester.md"
+	after := removeBasename(path)
+	fmt.Printf("path: %s\nafter: %s\n", path, after)
 }
