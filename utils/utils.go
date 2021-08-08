@@ -18,6 +18,30 @@ const (
 	HP_FILEPATH = "./hyperpaths"
 )
 
+func DeleteElement(original []string, index int) []string {
+	deleted := make([]string, 0)
+	for i, element := range original {
+		if i != index {
+			deleted = append(deleted, element)
+		}
+	}
+	return deleted
+}
+
+func SwapElements(original []string, indexA, indexB int) []string {
+	swapped := make([]string, len(original))
+	for i := 0; i < len(original); i++ {
+		if i == indexA {
+			swapped[i] = original[indexB]
+		} else if i == indexB {
+			swapped[i] = original[indexA]
+		} else {
+			swapped[i] = original[i]
+		}
+	}
+	return swapped
+}
+
 func ArticlesToTable(articles []hackerNews.HNArticle) string {
 	var output string
 	for _, article := range articles {
@@ -26,21 +50,7 @@ func ArticlesToTable(articles []hackerNews.HNArticle) string {
 	return output
 }
 
-func Write(
-	outputPath *os.File,
-	output string,
-	clipboardOut bool,
-) (string, error) {
-	if !clipboardOut {
-		_, err := outputPath.Write([]byte(output))
-		return outputPath.Name(), err
-	} else {
-		err := clipboard.WriteAll(output)
-		return "system clipboard", err
-	}
-}
-
-func expandTilde(path string) string {
+func ExpandTilde(path string) string {
 	usr, _ := user.Current()
 	return strings.ReplaceAll(path, "~", usr.HomeDir)
 }
@@ -92,6 +102,29 @@ func removeDuplicates(ints []int) []int {
 		}
 	}
 	return ret
+}
+
+func CreateFile(path string) (*os.File, error) {
+	outputPath, err := os.OpenFile(
+		path,
+		os.O_CREATE,
+		0666,
+	)
+	return outputPath, err
+}
+
+func Write(
+	outputPath *os.File,
+	output string,
+	clipboardOut bool,
+) (string, error) {
+	if !clipboardOut {
+		_, err := outputPath.Write([]byte(output))
+		return outputPath.Name(), err
+	} else {
+		err := clipboard.WriteAll(output)
+		return "system clipboard", err
+	}
 }
 
 func GetUserSelections(userInput string) ([]int, error) {
@@ -183,33 +216,25 @@ func getFile(
 func getHyperpathFromUser() (string, bool, error) {
 	var hyperpath string
 	var err error
-	fmt.Printf("Enter hyperpath: ")
+	fmt.Printf("Enter hyperpath[0]: ")
 	if _, err = fmt.Scan(&hyperpath); err != nil {
 		return "", false, err
 	} else if strings.Contains(hyperpath, "~") {
-		hyperpath = expandTilde(hyperpath)
+		hyperpath = ExpandTilde(hyperpath)
 	}
 	fmt.Println()
 	return hyperpath, true, nil
 }
 
-func getHyperpath() (string, error) {
-	var hyperpathFile *os.File
+func getMainHyperpath() (string, error) {
 	var err error
 	var hyperpathChanged bool
-	hyperpathFilePath := "env/hyperpath"
 
 	// Create the hyperpathFile if it doesn't exist.
-	if !PathExists(hyperpathFilePath) {
-		hyperpathFile, err = os.OpenFile(
-			hyperpathFilePath,
+	if !PathExists(HP_FILEPATH) {
+		_, err = os.OpenFile(
+			HP_FILEPATH,
 			os.O_CREATE,
-			0666,
-		)
-	} else {
-		hyperpathFile, err = os.OpenFile(
-			hyperpathFilePath,
-			os.O_RDONLY,
 			0666,
 		)
 	}
@@ -217,18 +242,16 @@ func getHyperpath() (string, error) {
 		return "", err
 	}
 
-	data := make([]byte, 1024)
-	var bytesRead int
-	bytesRead, err = hyperpathFile.Read(data)
-	if bytesRead != 0 && err != nil {
+	allHyperpaths, err := GetAllHyperpaths()
+	if err != nil {
 		return "", err
 	}
 
-	hyperpath := string(data[:bytesRead])
-	if bytesRead == 0 {
+	mainHyperpath := allHyperpaths[0]
+	if mainHyperpath == "" {
 		// Make this a separate function.
 		var userInput string
-		fmt.Printf("No hyperpath specified.\n")
+		fmt.Printf("No hyperpath[0] specified.\n")
 		fmt.Printf("Would you like to set it now? Y/n: ")
 		if _, err = fmt.Scan(&userInput); err != nil {
 			log.Fatal(err)
@@ -240,32 +263,27 @@ func getHyperpath() (string, error) {
 			return "", errors.New(EARLY_EXIT)
 		}
 
-		hyperpath, hyperpathChanged, err  = getHyperpathFromUser()
+		mainHyperpath, hyperpathChanged, err  = getHyperpathFromUser()
 		if err != nil {
 			return "", err
 		}
 	}
-	for !PathExists(hyperpath) {
-		fmt.Printf("\nInvalid file path: %s\n", hyperpath)
-		hyperpath, hyperpathChanged, err  = getHyperpathFromUser()
+	for !PathExists(mainHyperpath) {
+		fmt.Printf("\nInvalid file path: %s\n", mainHyperpath)
+		mainHyperpath, hyperpathChanged, err  = getHyperpathFromUser()
 		if err != nil {
 			return "", err
 		}
 	}
 	if hyperpathChanged {
-		// The hyperpath on file was either wrong or non-existent.
-		// Make a new hyperpath file and write a valid hyperpath to it.
-		if err = os.Remove(hyperpathFilePath); err != nil {
+		// hyperpath[0] on file was either wrong or non-existent.
+		// Insert the new hyperpath[0] into the hyperpath file.
+		err := changeNthHyperpath(mainHyperpath, 0)
+		if err != nil {
 			return "", err
 		}
-		hyperpathFile, err = os.OpenFile(
-			hyperpathFilePath,
-			os.O_CREATE|os.O_WRONLY,
-			0666,
-		)
-		hyperpathFile.WriteString(hyperpath)
 	}
-	return hyperpath, nil
+	return mainHyperpath, nil
 }
 
 func ChooseOutputPath(
@@ -282,7 +300,7 @@ func ChooseOutputPath(
 	} else {
 		// Use hyperpath.
 		var hyperpath string
-		if hyperpath, err = getHyperpath(); err != nil {
+		if hyperpath, err = getMainHyperpath(); err != nil {
 			return outputPath, err
 		}
 		outputPath, err = getFile(hyperpath, overwriteFile)
@@ -290,7 +308,7 @@ func ChooseOutputPath(
 	return outputPath, err
 }
 
-func writeHyperpaths(hyperpaths []string) error {
+func WriteHyperpaths(hyperpaths []string) error {
 	var err error
 	// remove and create hyperpaths file
 	if err = os.Remove(HP_FILEPATH); err != nil {
@@ -329,7 +347,7 @@ func changeNthHyperpath(path string, n int) error {
 		hyperpaths[n] = path
 	}
 
-	return writeHyperpaths(hyperpaths)
+	return WriteHyperpaths(hyperpaths)
 }
 
 func pruneForHyperpaths(rawString string) []string {
@@ -369,7 +387,7 @@ func GetAllHyperpaths() ([]string, error) {
 	var bytesRead int
 	bytesRead, err = hyperpathsFile.Read(data)
 	if bytesRead == 0 {
-		return []string{}, errors.New("hyperpaths file is empty.")
+		return []string{""}, nil
 	}
 	if err != nil {
 		return []string{}, err
@@ -383,9 +401,6 @@ func GetAllHyperpaths() ([]string, error) {
 }
 
 func EditNthHyperpath(path string, n int) (written, valid bool) {
-	if strings.Contains(path, "~") {
-		path = expandTilde(path)
-	}
 	// Check if the file exists. If so edit the hyperpath.
 	if PathExists(path) && !isDirectory(path) {
 		err := changeNthHyperpath(path, n)
@@ -406,7 +421,8 @@ func EditNthHyperpath(path string, n int) (written, valid bool) {
 }
 
 func TestStub() {
-	path := "/home/severian/terminus_est/tester.md"
-	after := removeBasename(path)
-	fmt.Printf("path: %s\nafter: %s\n", path, after)
+	original := []string{"first", "second", "third"}
+	swapped := SwapElements(original, 0, 2)
+	fmt.Println(original)
+	fmt.Println(swapped)
 }

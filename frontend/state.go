@@ -15,6 +15,9 @@ const (
 	promptView
 	hyperpathsView
 	editHPView
+	addHPView
+	createFileView
+	invalidFilepathView
 )
 
 // Generic prompt and text input
@@ -34,12 +37,14 @@ type promptAndTextInput struct {
 	- Return to the start screen
 */
 type editHyperpath struct {
+	newHyperpath string
 	index int
 }
 
 type hyperpathsMenu struct {
 	hyperpaths    []string
 	editHyperpath editHyperpath
+	moveMode      bool
 	cursorIndex   int
 }
 

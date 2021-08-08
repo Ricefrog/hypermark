@@ -63,6 +63,11 @@ func (m *model) initPromptAndTextInput(
 	m.promptAndTextInput.footer = footer
 }
 
+func (m *model) setPrompt(prompt string, options []string) {
+	m.promptMenu.prompt = prompt
+	m.promptMenu.options = options
+}
+
 // Remove previous state
 func (m *model) Wipe() {
 	m.articleMenu = articleMenu{
@@ -87,6 +92,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updateHyperpathsMenu(m, msg)
 	case editHPView:
 		return updateEditHyperpath(m, msg)
+	case addHPView:
+		return updateEditHyperpath(m, msg)
+	case createFileView:
+		return updateCreateFile(m, msg)
+	case invalidFilepathView:
+		return updateInvalidFilepath(m, msg)
 	}
 	return updateStartMenu(m, msg)
 }
@@ -102,7 +113,13 @@ func (m model) View() string {
 	case hyperpathsView:
 		return hyperpathsMenuView(m)
 	case editHPView:
-		return editHyperpathView(m)
+		return promptAndTextInputView(m)
+	case addHPView:
+		return promptAndTextInputView(m)
+	case createFileView:
+		return promptMenuView(m)
+	case invalidFilepathView:
+		return promptMenuView(m)
 	}
 	return startMenuView(m)
 }
