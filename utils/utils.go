@@ -103,6 +103,24 @@ func removeDuplicates(ints []int) []int {
 	return ret
 }
 
+func asciiCodes(str string) []int {
+	ret := make([]int, 0)
+	for i := 0; i < len(str); i++ {
+		ret = append(ret, int(str[i]))
+	}
+	return ret
+}
+
+func RemoveEmptyStrings(arr []string) (retArr []string) {
+	for _, str := range arr {
+		// All whitespace or some sort of null character.
+		if len(strings.TrimSpace(str)) != 0 && int(str[0]) != 0 {
+			retArr = append(retArr, str)
+		}
+	}
+	return
+}
+
 func CreateFile(path string) (*os.File, error) {
 	outputPath, err := os.OpenFile(
 		path,
@@ -126,6 +144,28 @@ func Write(
 	}
 }
 
+func trimRows(raw []string) (trimmed []string) {
+	for _, field := range raw {
+		trimmed = append(trimmed, field[2:len(field)-2])
+	}
+	return
+}
+
+func tableToBytemark(table string) Bytemark {
+	fields := trimRows(DeleteElement(strings.Split(table, "\n"), 1))
+	bytemark := Bytemark{
+		Title: fields[0],
+		DateTime: fields[1],
+		RootURL: fields[2],
+	}
+	if len(fields) > 3 {
+		for i := 3; i < len(fields); i++ {
+			bytemark.Rows = append(bytemark.Rows, fields[i])
+		}
+	}
+	return bytemark
+}
+
 func FileToBytemarks(file *os.File) ([]Bytemark, error) {
 	bytemarks := make([]Bytemark, 0)
 
@@ -138,9 +178,9 @@ func FileToBytemarks(file *os.File) ([]Bytemark, error) {
 		return bytemarks, err
 	}
 
-	tables := strings.Split(string(data), "\n\n")
-	for i, table := range tables {
-		fmt.Printf("\ntable %d\n%s", i, table)
+	tables := RemoveEmptyStrings(strings.Split(string(data), "\n\n"))
+	for _, table := range tables {
+		bytemarks = append(bytemarks, tableToBytemark(table))
 	}
 	return bytemarks, nil
 }
@@ -155,7 +195,16 @@ func TestStub() {
 		log.Fatal(err)
 	}
 
-	_, _ = FileToBytemarks(file)
+	bytemarks, _ := FileToBytemarks(file)
+	for _, b := range bytemarks {
+		fmt.Printf(
+			"Title: %s\nDateTime: %s\nRootURL: %s\nRows: %v\n",
+			b.Title,
+			b.DateTime,
+			b.RootURL,
+			b.Rows,
+		)
+	}
 }
 
 func GetUserSelections(userInput string) ([]int, error) {
