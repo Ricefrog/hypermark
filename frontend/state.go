@@ -12,7 +12,7 @@ type ViewType int
 const (
 	startView ViewType = iota
 	articleView
-	promptView
+	articlesAddedView
 	hyperpathsView
 	editHPView
 	addHPView
@@ -38,7 +38,7 @@ type promptAndTextInput struct {
 */
 type editHyperpath struct {
 	newHyperpath string
-	index int
+	index        int
 }
 
 type hyperpathsMenu struct {
@@ -66,9 +66,16 @@ type startMenu struct {
 	cursorIndex int
 }
 
+type outputVars struct {
+	tail          []string
+	overwriteFile bool
+	writeToStdout bool
+	clipboardOut  bool
+	outputPath    *os.File
+}
+
 type model struct {
-	clipboardOut bool
-	outputPath   *os.File
+	outputVars outputVars
 
 	currentView        ViewType // Use this to choose which view to show.
 	startMenu          startMenu

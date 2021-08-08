@@ -46,10 +46,10 @@ func updateStartMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 func startMenuView(m model) string {
 	state := m.startMenu
 	var outstr string
-	if m.clipboardOut {
+	if m.outputVars.clipboardOut {
 		outstr = "system clipboard"
 	} else {
-		outstr = m.outputPath.Name()
+		outstr = m.outputVars.outputPath.Name()
 	}
 
 	s := "\nhypermark\n\n"
@@ -101,7 +101,7 @@ func updateArticleMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				state.cursorIndex = 0
 			}
 		case "enter", " ":
-			if state.cursorIndex < to-1 {
+			if state.cursorIndex < to {
 				_, ok := state.selected[state.cursorIndex]
 				if ok {
 					delete(state.selected, state.cursorIndex)
@@ -117,14 +117,14 @@ func updateArticleMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				output := utils.ArticlesToTable(articles)
 				writtenTo, err := utils.Write(
-					m.outputPath, output, m.clipboardOut,
+					m.outputVars.outputPath, output, m.outputVars.clipboardOut,
 				)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				// Set up the prompt screen
-				m.currentView = promptView
+				// Set up the 'articles added' prompt screen
+				m.currentView = articlesAddedView
 				m.promptMenu.options = []string{"Continue", "Quit"}
 				m.promptMenu.prompt = fmt.Sprintf(
 					"%d articles written to %s.\n",
@@ -192,7 +192,7 @@ func articleMenuView(m model) string {
 	return s
 }
 
-func updatePromptMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+func updateArticlesAdded(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	state := &m.promptMenu
 
 	switch msg := msg.(type) {
@@ -301,8 +301,10 @@ func updateHyperpathsMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "ctrl+c", "q":
 				return m, tea.Quit
 			case "m", "enter", "esc":
-				err := utils.WriteHyperpaths(state.hyperpaths)
-				if err != nil {
+				if err := utils.WriteHyperpaths(state.hyperpaths); err != nil {
+					log.Fatal(err)
+				}
+				if err := m.syncOutputVars(); err != nil {
 					log.Fatal(err)
 				}
 				state.moveMode = false
@@ -391,6 +393,9 @@ func updateEditHyperpath(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			written, valid := utils.EditNthHyperpath(newHyperpath, stateB.index)
 			if written && valid {
+				if err := m.syncOutputVars(); err != nil {
+					log.Fatal(err)
+				}
 				m.loadHyperpaths()
 				m.currentView = hyperpathsView
 			} else if valid {
@@ -453,9 +458,7 @@ func updateCreateFile(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				if _, err := utils.CreateFile(newHyperpath); err != nil {
 					log.Fatal(err)
 				}
-				written, valid := utils.EditNthHyperpath(
-					newHyperpath, index,
-				)
+				written, valid := utils.EditNthHyperpath(newHyperpath, index)
 				if !written || !valid {
 					var wrongRet string
 					if !written && !valid {
@@ -475,6 +478,9 @@ func updateCreateFile(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 						index,
 					)
 					log.Fatal(message)
+				}
+				if err := m.syncOutputVars(); err != nil {
+					log.Fatal(err)
 				}
 				m.loadHyperpaths()
 			}

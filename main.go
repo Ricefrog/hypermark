@@ -63,7 +63,13 @@ func main() {
 	defer outputPath.Close()
 
 	if tui {
-		frontend.SetOutputPath(outputPath, clipboardOut)
+		frontend.SetOutputVars(
+			outputPath,
+			flag.Args(),
+			o,
+			stdout,
+			clipboardOut,
+		)
 		frontend.ClearScreen()
 		frontend.Start()
 		return

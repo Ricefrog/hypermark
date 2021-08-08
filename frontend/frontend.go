@@ -2,11 +2,11 @@ package frontend
 
 import (
 	"fmt"
-	"log"
-	"hypermark/utils"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	hn "hypermark/hackerNews"
+	"hypermark/utils"
+	"log"
 	"os"
 )
 
@@ -23,18 +23,38 @@ var initialModel = model{
 	},
 }
 
-func SetOutputPath(outputPath *os.File, clipboardOut bool) {
-	if clipboardOut {
-		initialModel.clipboardOut = true
-	} else {
-		initialModel.outputPath = outputPath
-	}
-}
-
 func ClearScreen() {
 	for i := 0; i < 100; i++ {
 		fmt.Println()
 	}
+}
+
+func SetOutputVars(
+	outputPath *os.File,
+	tail []string,
+	overwriteFile bool,
+	writeToStdout bool,
+	clipboardOut bool,
+) {
+	state := &initialModel.outputVars
+
+	state.outputPath = outputPath
+	state.tail = tail
+	state.writeToStdout = writeToStdout
+	state.clipboardOut = clipboardOut
+}
+
+func (m *model) syncOutputVars() error {
+	state := &m.outputVars
+
+	outputPath, err := utils.ChooseOutputPath(
+		state.tail,
+		state.overwriteFile,
+		state.writeToStdout,
+		state.clipboardOut,
+	)
+	state.outputPath = outputPath
+	return err
 }
 
 func (m *model) initializeArticles() {
@@ -86,8 +106,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updateStartMenu(m, msg)
 	case articleView:
 		return updateArticleMenu(m, msg)
-	case promptView:
-		return updatePromptMenu(m, msg)
+	case articlesAddedView:
+		return updateArticlesAdded(m, msg)
 	case hyperpathsView:
 		return updateHyperpathsMenu(m, msg)
 	case editHPView:
@@ -108,7 +128,7 @@ func (m model) View() string {
 		return startMenuView(m)
 	case articleView:
 		return articleMenuView(m)
-	case promptView:
+	case articlesAddedView:
 		return promptMenuView(m)
 	case hyperpathsView:
 		return hyperpathsMenuView(m)
