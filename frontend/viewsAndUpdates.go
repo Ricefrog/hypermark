@@ -8,7 +8,6 @@ import (
 	"hypermark/frontend/styles"
 	"hypermark/frontend/templates"
 	"hypermark/utils"
-	hn "hypermark/hackerNews"
 	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -109,7 +108,7 @@ func updateArticleMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					state.selected[state.cursorIndex] = struct{}{}
 				}
 			} else { // If "enter" is pressed on the checkout prompt
-				articles := make([]hn.HNArticle, 0)
+				articles := make([]utils.Bytemark, 0)
 				for i, _ := range state.selected {
 					// Append each HNArticle to the list.
 					articles = append(articles, state.articles[i])

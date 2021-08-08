@@ -14,7 +14,7 @@ var initialModel = model{
 	startMenu: startMenu{
 		choices: []string{
 			"View hackernews articles",
-			"Manage hypermarks",
+			"Manage bytemarks",
 			"Edit hyperpaths",
 		},
 	},

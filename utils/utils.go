@@ -9,7 +9,6 @@ import (
 	"strings"
 	"strconv"
 	"regexp"
-	"hypermark/hackerNews"
 	"github.com/atotto/clipboard"
 )
 
@@ -42,7 +41,11 @@ func SwapElements(original []string, indexA, indexB int) []string {
 	return swapped
 }
 
-func ArticlesToTable(articles []hackerNews.HNArticle) string {
+func AppendArticleTable(str string, article Bytemark) string {
+	return str + article.Table()
+}
+
+func ArticlesToTable(articles []Bytemark) string {
 	var output string
 	for _, article := range articles {
 		output = AppendArticleTable(output, article)
@@ -53,10 +56,6 @@ func ArticlesToTable(articles []hackerNews.HNArticle) string {
 func ExpandTilde(path string) string {
 	usr, _ := user.Current()
 	return strings.ReplaceAll(path, "~", usr.HomeDir)
-}
-
-func AppendArticleTable(str string, article hackerNews.HNArticle) string {
-	return str + article.GetTable()
 }
 
 func contains(arr []int, search int) bool {
@@ -125,6 +124,38 @@ func Write(
 		err := clipboard.WriteAll(output)
 		return "system clipboard", err
 	}
+}
+
+func FileToBytemarks(file *os.File) ([]Bytemark, error) {
+	bytemarks := make([]Bytemark, 0)
+
+	data := make([]byte, 1024)
+	bytesRead, err := file.Read(data)
+	if bytesRead == 0 {
+		return bytemarks, nil
+	}
+	if err != nil {
+		return bytemarks, err
+	}
+
+	tables := strings.Split(string(data), "\n\n")
+	for i, table := range tables {
+		fmt.Printf("\ntable %d\n%s", i, table)
+	}
+	return bytemarks, nil
+}
+
+func TestStub() {
+	file, err := os.OpenFile(
+		"/home/severian/terminus_est/tester.md",
+		os.O_RDONLY,
+		0666,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, _ = FileToBytemarks(file)
 }
 
 func GetUserSelections(userInput string) ([]int, error) {
@@ -418,11 +449,4 @@ func EditNthHyperpath(path string, n int) (written, valid bool) {
 		return
 	}
 	return
-}
-
-func TestStub() {
-	original := []string{"first", "second", "third"}
-	swapped := SwapElements(original, 0, 2)
-	fmt.Println(original)
-	fmt.Println(swapped)
 }

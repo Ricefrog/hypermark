@@ -86,18 +86,18 @@ func main() {
 	}
 
 	if url {
-		datamark, err := urlMode.DatamarkFromURL()
+		bytemark, err := urlMode.BytemarkFromURL()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		output := datamark.Table
+		output := bytemark.Table()
 		writtenTo, err := utils.Write(outputPath, output, clipboardOut)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("datamark for %s was written to %s.\n",
-			datamark.URL,
+		fmt.Printf("bytemark for %s was written to %s.\n",
+			bytemark.RootURL,
 			writtenTo,
 		)
 		return
@@ -106,8 +106,8 @@ func main() {
 	articles := hackerNews.ScrapeHN()
 	if s {
 		for i := 0; i < 30; i++ {
-			data := articles[i].GetInfo()
-			fmt.Printf("%d. %s\n%s\n%s\n\n", i+1, data[0], data[1], data[2])
+			title, sLink, cLink := hackerNews.GetHNInfo(articles[i])
+			fmt.Printf("%d. %s\n%s\n%s\n\n", i+1, title, sLink, cLink)
 		}
 	} else if k != "" {
 		fmt.Printf("Searching for articles with '%s' in the title.\n", k)

@@ -3,41 +3,24 @@ package hackerNews
 import (
 	"fmt"
 	"github.com/gocolly/colly"
-	"strings"
+	"hypermark/utils"
 )
 
 const HN_URL = "https://news.ycombinator.com/"
 
-type HNArticle struct {
-	Title       string
-	StoryLink   string
-	CommentLink string
+func GetHNInfo(b utils.Bytemark) (title, storyLink, commentLink string) {
+	title = b.Title
+	storyLink = b.RootURL
+	commentLink = b.Rows[0]
+
+	return title, storyLink, commentLink
 }
 
-func (article HNArticle) GetInfo() []string {
-	return []string{article.Title, article.StoryLink, article.CommentLink}
-}
-
-// Makes a markdown table with the article's info.
-func (article HNArticle) GetTable() string {
-	data := article.GetInfo()
-	table := fmt.Sprintf("\n| %s |\n| :-- |\n| %s |\n| %s |\n",
-		data[0], data[1], data[2])
-	return table
-}
-
-// Returns whether or not the title of the article contains the search
-// string. Can be improved upon later -> punctuation can create annoying
-// situations.
-func (article HNArticle) TitleContains(keyword string) bool {
-	return strings.Contains(strings.ToLower(article.Title), keyword)
-}
-
-func ScrapeHN() []HNArticle {
+func ScrapeHN() []utils.Bytemark {
 	NUM_OF_ARTICLES := 30 // number of articles on the front page.
 	index := 0
 	cIndex := 0
-	articles := make([]HNArticle, NUM_OF_ARTICLES)
+	articles := make([]utils.Bytemark, NUM_OF_ARTICLES)
 
 	c := colly.NewCollector()
 
@@ -47,22 +30,24 @@ func ScrapeHN() []HNArticle {
 
 	c.OnHTML(".athing", func(e *colly.HTMLElement) {
 		articles[index].Title = e.ChildText("a.storylink")
-		articles[index].StoryLink = e.ChildAttr("a.storylink", "href")
+		articles[index].RootURL = e.ChildAttr("a.storylink", "href")
 		index++
 	})
 
 	c.OnHTML(".athing + tr", func(e *colly.HTMLElement) {
 		selector := "td.subtext a:nth-child(6)"
-		articles[cIndex].CommentLink = e.ChildAttr(selector, "href")
+		commentLink := e.ChildAttr(selector, "href")
+		articles[cIndex].Rows = append(articles[cIndex].Rows, commentLink)
 		cIndex++
 	})
 
 	c.Visit(HN_URL)
 	for i := 0; i < NUM_OF_ARTICLES; i++ {
-		if articles[i].CommentLink != "" {
-			articles[i].CommentLink = HN_URL + articles[i].CommentLink
+		articles[i].SetDateTimeNow()
+		if len(articles[i].Rows) != 0 {
+			articles[i].Rows[0] = "Comments: " + HN_URL + articles[i].Rows[0]
 		} else {
-			articles[i].CommentLink = "No comments."
+			articles[i].Rows = append(articles[i].Rows, "No comments.")
 		}
 	}
 	return articles

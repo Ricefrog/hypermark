@@ -3,7 +3,7 @@ package frontend
 
 import (
 	"github.com/charmbracelet/bubbles/textinput"
-	hn "hypermark/hackerNews"
+	"hypermark/utils"
 	"os"
 )
 
@@ -55,7 +55,7 @@ type promptMenu struct {
 }
 
 type articleMenu struct {
-	articles    []hn.HNArticle
+	articles    []utils.Bytemark
 	selected    map[int]struct{}
 	cursorIndex int
 	pageIndex   int
