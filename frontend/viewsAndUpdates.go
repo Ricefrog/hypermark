@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"os"
 	"hypermark/frontend/styles"
 	"hypermark/frontend/templates"
 	"hypermark/utils"
@@ -33,6 +34,9 @@ func updateStartMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			case 0:
 				m.initializeArticles()
 				m.currentView = articleView
+			case 1:
+				m.loadHyperpaths()
+				m.currentView = bytemarksMainView
 			case 2:
 				m.loadHyperpaths()
 				m.currentView = hyperpathsView
@@ -56,6 +60,7 @@ func startMenuView(m model) string {
 	for i, choice := range state.choices {
 		if i == state.cursorIndex {
 			s += templates.Cursor()
+			choice = styles.HRender(styles.ProtonPurple, choice)
 		}
 		s += choice+"\n"
 	}
@@ -114,7 +119,7 @@ func updateArticleMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					articles = append(articles, state.articles[i])
 				}
 
-				output := utils.ArticlesToTable(articles)
+				output := utils.BytemarksToTables(articles)
 				writtenTo, err := utils.Write(
 					m.outputVars.outputPath, output, m.outputVars.clipboardOut,
 				)
@@ -498,7 +503,198 @@ func updateInvalidFilepath(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter", "esc":
 			m.currentView = hyperpathsView
-			return m, nil
+		}
+	}
+	return m, nil
+}
+
+func updateBytemarksMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	state := &m.hyperpathsMenu
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl-c", "q":
+			return m, tea.Quit
+		case "up", "k":
+			if state.cursorIndex > 0 {
+				state.cursorIndex--
+			}
+		case "down", "j":
+			if state.cursorIndex < len(state.hyperpaths)-1 {
+				state.cursorIndex++
+			}
+		case "enter":
+			// load bytemarks of the selected hyperpath into state.
+			var err error
+			file, err := os.OpenFile(
+				state.hyperpaths[state.cursorIndex],
+				os.O_RDWR,
+				0666,
+			)
+			if err != nil {
+				log.Fatal(err)
+			}
+			m.bytemarksManager.bytemarks, err = utils.FileToBytemarks(file)
+			if err != nil {
+				log.Fatal(err)
+			}
+			m.bytemarksManager.hyperpath = state.hyperpaths[state.cursorIndex]
+			m.currentView = byteManagerView
+		case "esc":
+			m.currentView = startView
+		}
+	}
+	return m, nil
+}
+
+func bytemarksMenuView(m model) string {
+	state := m.hyperpathsMenu
+
+	var s string
+	s += fmt.Sprintf("\nhyperpaths[%d]: Manage bytemarks (enter)\n\n", state.cursorIndex)
+
+	for i, hyperpath := range state.hyperpaths {
+		cursor := ""
+		if state.cursorIndex == i {
+			cursor = templates.Cursor()
+			hyperpath = styles.HRender(styles.ProtonPurple, hyperpath)
+		}
+		s += fmt.Sprintf("%s%d: %s\n", cursor, i, hyperpath)
+	}
+	return s
+}
+
+func updateBytemarksManager(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	state := &m.bytemarksManager
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl-c", "q":
+			return m, tea.Quit
+		case "s":
+			if state.moveMode {state.moveMode = false}
+			// Switch to a prompt for saving.
+			m.promptMenu.prompt = fmt.Sprintf(
+				"Save changes to %s?",
+				state.hyperpath,
+			)
+			m.promptMenu.options = []string{"Save", "Cancel"}
+			m.currentView = saveChangesView
+		case "m":
+			state.moveMode = !state.moveMode
+		case "up", "k":
+			if state.cursorIndex > 0 {
+				if state.moveMode {
+					state.bytemarks = utils.SwapBytemarks(
+						state.bytemarks,
+						state.cursorIndex,
+						state.cursorIndex-1,
+					)
+				}
+				state.cursorIndex--
+			}
+		case "down", "j":
+			if state.cursorIndex < len(state.bytemarks)-1 {
+				if state.moveMode {
+					state.bytemarks = utils.SwapBytemarks(
+						state.bytemarks,
+						state.cursorIndex,
+						state.cursorIndex+1,
+					)
+				}
+				state.cursorIndex++
+			}
+		case "esc":
+			m.currentView = bytemarksMainView
+		}
+	}
+	return m, nil
+}
+
+func bytemarksManagerView(m model) string {
+	state := m.bytemarksManager
+
+	if len(state.bytemarks) == 0 {
+		return "No bytemarks to display.\nGo back (esc)"
+	}
+
+	var s string
+	var move string
+	if !state.moveMode {
+		move = " | Move (m)"
+	} else {
+		move = " | Drop (m)"
+	}
+
+	s += fmt.Sprintf("\nSave (s) | Delete (d)%s\n\n", move)
+
+	for i, bytemark := range state.bytemarks {
+		title := bytemark.Title
+		cursor := ""
+		if state.cursorIndex == i {
+			cursor = templates.Cursor()
+			if state.moveMode {
+				title = styles.HRender(styles.OrangeRed, title)
+			} else {
+				title = styles.HRender(styles.ProtonPurple, title)
+			}
+		}
+		s += fmt.Sprintf("%s%d: %s\n", cursor, i, title)
+	}
+
+	s += "\nCreate bytemark using system clipboard (n)\nGo back (esc)\n"
+	return s
+}
+
+func updateSaveChanges(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	stateA := &m.promptMenu
+	stateB := &m.bytemarksManager
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "esc":
+			m.currentView = byteManagerView
+		case "up", "k":
+			if stateA.cursorIndex > 0 {
+				stateA.cursorIndex--
+			}
+		case "down", "j":
+			if stateA.cursorIndex < len(stateA.options)-1 {
+				stateA.cursorIndex++
+			}
+		case "enter":
+			if stateA.cursorIndex == 0 {
+				output := utils.BytemarksToTables(stateB.bytemarks)
+				if err := os.Remove(stateB.hyperpath); err != nil {
+					log.Fatal(err)
+				}
+				selectedFile, err := os.OpenFile(
+					stateB.hyperpath,
+					os.O_CREATE|os.O_RDWR,
+					0666,
+				)
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, err = utils.Write(
+					selectedFile,
+					output,
+					m.outputVars.clipboardOut,
+				)
+				if err != nil {
+					log.Fatal(err)
+				}
+				stateB.bytemarks, err = utils.FileToBytemarks(selectedFile)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			m.currentView = byteManagerView
 		}
 	}
 	return m, nil

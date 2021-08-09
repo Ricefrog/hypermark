@@ -41,14 +41,10 @@ func SwapElements(original []string, indexA, indexB int) []string {
 	return swapped
 }
 
-func AppendArticleTable(str string, article Bytemark) string {
-	return str + article.Table()
-}
-
-func ArticlesToTable(articles []Bytemark) string {
+func BytemarksToTables(bytemarks []Bytemark) string {
 	var output string
-	for _, article := range articles {
-		output = AppendArticleTable(output, article)
+	for _, bytemark := range bytemarks {
+		output += bytemark.Table()
 	}
 	return output
 }
@@ -144,15 +140,23 @@ func Write(
 	}
 }
 
-func trimRows(raw []string) (trimmed []string) {
+func trimRows(raw []string) ([]string, error) {
+	trimmed := make([]string, 0)
 	for _, field := range raw {
-		trimmed = append(trimmed, field[2:len(field)-2])
+		if field[0] == '|' && field[len(field)-1] == '|' {
+			trimmed = append(trimmed, field[2:len(field)-2])
+		} else {
+			return trimmed, errors.New("Malformed bytemark table.")
+		}
 	}
-	return
+	return trimmed, nil
 }
 
-func tableToBytemark(table string) Bytemark {
-	fields := trimRows(DeleteElement(strings.Split(table, "\n"), 1))
+func tableToBytemark(table string) (Bytemark, error) {
+	fields, err := trimRows(DeleteElement(strings.Split(table, "\n"), 1))
+	if err != nil {
+		return Bytemark{}, err
+	}
 	bytemark := Bytemark{
 		Title: fields[0],
 		DateTime: fields[1],
@@ -163,7 +167,7 @@ func tableToBytemark(table string) Bytemark {
 			bytemark.Rows = append(bytemark.Rows, fields[i])
 		}
 	}
-	return bytemark
+	return bytemark, nil
 }
 
 func FileToBytemarks(file *os.File) ([]Bytemark, error) {
@@ -180,7 +184,11 @@ func FileToBytemarks(file *os.File) ([]Bytemark, error) {
 
 	tables := RemoveEmptyStrings(strings.Split(string(data), "\n\n"))
 	for _, table := range tables {
-		bytemarks = append(bytemarks, tableToBytemark(table))
+		bytemark, err := tableToBytemark(table)
+		if err != nil {
+			return bytemarks, nil
+		}
+		bytemarks = append(bytemarks, bytemark)
 	}
 	return bytemarks, nil
 }

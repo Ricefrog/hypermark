@@ -116,7 +116,7 @@ func main() {
 		articlesFound := 0
 		for i := 0; i < 30; i++ {
 			if articles[i].TitleContains(k) {
-				output = utils.AppendArticleTable(output, articles[i])
+				output += articles[i].Table()
 				articlesFound++
 			}
 		}
@@ -149,7 +149,7 @@ func main() {
 
 		var output string
 		for _, sel := range selections {
-			output = utils.AppendArticleTable(output, articles[sel-1])
+			output += articles[sel-1].Table()
 		}
 
 		writtenTo, err := utils.Write(outputPath, output, clipboardOut)

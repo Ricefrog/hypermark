@@ -108,6 +108,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updateArticleMenu(m, msg)
 	case articlesAddedView:
 		return updateArticlesAdded(m, msg)
+	case bytemarksMainView:
+		return updateBytemarksMenu(m, msg)
+	case byteManagerView:
+		return updateBytemarksManager(m, msg)
+	case saveChangesView:
+		return updateSaveChanges(m, msg)
 	case hyperpathsView:
 		return updateHyperpathsMenu(m, msg)
 	case editHPView:
@@ -129,6 +135,12 @@ func (m model) View() string {
 	case articleView:
 		return articleMenuView(m)
 	case articlesAddedView:
+		return promptMenuView(m)
+	case bytemarksMainView:
+		return bytemarksMenuView(m)
+	case byteManagerView:
+		return bytemarksManagerView(m)
+	case saveChangesView:
 		return promptMenuView(m)
 	case hyperpathsView:
 		return hyperpathsMenuView(m)

@@ -48,3 +48,16 @@ func (article Bytemark) TitleContains(keyword string) bool {
 	return strings.Contains(strings.ToLower(article.Title), keyword)
 }
 
+func SwapBytemarks(original []Bytemark, indexA, indexB int) []Bytemark {
+	swapped := make([]Bytemark, len(original))
+	for i := 0; i < len(original); i++ {
+		if i == indexA {
+			swapped[i] = original[indexB]
+		} else if i == indexB {
+			swapped[i] = original[indexA]
+		} else {
+			swapped[i] = original[i]
+		}
+	}
+	return swapped
+}
