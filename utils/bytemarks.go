@@ -71,3 +71,17 @@ func SwapBytemarks(original []Bytemark, indexA, indexB int) []Bytemark {
 	}
 	return swapped
 }
+
+func InsertBytemark(original []Bytemark, bm Bytemark, index int) []Bytemark {
+	inserted := make([]Bytemark, len(original)+1)
+	insertedIndex := 0
+	for i := 0; i < len(original); i++ {
+		if insertedIndex == index {
+			inserted[insertedIndex] = bm
+			insertedIndex++
+		}
+		inserted[insertedIndex] = original[i]
+		insertedIndex++
+	}
+	return inserted
+}

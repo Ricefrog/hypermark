@@ -584,6 +584,12 @@ func updateBytemarksManager(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 			m.promptMenu.options = []string{"Save", "Cancel"}
 			m.currentView = saveChangesView
+		case "p":
+			state.bytemarks = utils.InsertBytemark(
+				state.bytemarks,
+				state.bytemarks[state.cursorIndex],
+				state.cursorIndex,
+			)
 		case "d":
 			m.promptMenu.prompt = fmt.Sprintf("Are you sure?")
 			m.promptMenu.options = []string{"Yes", "Cancel"}

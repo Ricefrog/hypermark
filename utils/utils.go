@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"strings"
@@ -41,12 +42,12 @@ func SwapElements(original []string, indexA, indexB int) []string {
 	return swapped
 }
 
-func BytemarksToTables(bytemarks []Bytemark) string {
-	var output string
-	for _, bytemark := range bytemarks {
-		output += bytemark.Table()
+func ArrayToString(arr []string) string {
+	var s string
+	for i, el := range arr {
+		s += fmt.Sprintf("%d: %s\n", i, el)
 	}
-	return output
+	return s
 }
 
 func ExpandTilde(path string) string {
@@ -61,6 +62,14 @@ func contains(arr []int, search int) bool {
 		}
 	}
 	return false
+}
+
+func BytemarksToTables(bytemarks []Bytemark) string {
+	var output string
+	for _, bytemark := range bytemarks {
+		output += bytemark.Table()
+	}
+	return output
 }
 
 func isDirectory(path string) bool {
@@ -157,6 +166,12 @@ func tableToBytemark(table string) (Bytemark, error) {
 	if err != nil {
 		return Bytemark{}, err
 	}
+	if len(fields) < 3 {
+		errMsg := "In tableToBytemark:\n"
+		errMsg += fmt.Sprintf("Only %d fields.\n", len(fields))
+		errMsg += ArrayToString(fields)
+		return Bytemark{}, errors.New(errMsg)
+	}
 	bytemark := Bytemark{
 		Title: fields[0],
 		DateTime: fields[1],
@@ -173,11 +188,7 @@ func tableToBytemark(table string) (Bytemark, error) {
 func FileToBytemarks(file *os.File) ([]Bytemark, error) {
 	bytemarks := make([]Bytemark, 0)
 
-	data := make([]byte, 1024)
-	bytesRead, err := file.Read(data)
-	if bytesRead == 0 {
-		return bytemarks, nil
-	}
+	data, err := ioutil.ReadFile(file.Name())
 	if err != nil {
 		return bytemarks, err
 	}
@@ -186,7 +197,7 @@ func FileToBytemarks(file *os.File) ([]Bytemark, error) {
 	for _, table := range tables {
 		bytemark, err := tableToBytemark(table)
 		if err != nil {
-			return bytemarks, nil
+			return bytemarks, err
 		}
 		bytemarks = append(bytemarks, bytemark)
 	}
