@@ -539,6 +539,8 @@ func updateBytemarksMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			if err != nil {
 				log.Fatal(err)
 			}
+			file.Close()
+
 			m.bytemarksManager.hyperpath = state.hyperpaths[state.cursorIndex]
 			m.currentView = byteManagerView
 		case "esc":
@@ -582,6 +584,10 @@ func updateBytemarksManager(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 			m.promptMenu.options = []string{"Save", "Cancel"}
 			m.currentView = saveChangesView
+		case "d":
+			m.promptMenu.prompt = fmt.Sprintf("Are you sure?")
+			m.promptMenu.options = []string{"Yes", "Cancel"}
+			m.currentView = deleteBytemarkView
 		case "m":
 			state.moveMode = !state.moveMode
 		case "up", "k":
@@ -621,6 +627,7 @@ func bytemarksManagerView(m model) string {
 	}
 
 	var s string
+	s += fmt.Sprintf("%s\n", state.hyperpath)
 	var move string
 	if !state.moveMode {
 		move = " | Move (m)"
@@ -628,7 +635,7 @@ func bytemarksManagerView(m model) string {
 		move = " | Drop (m)"
 	}
 
-	s += fmt.Sprintf("\nSave (s) | Delete (d)%s\n\n", move)
+	s += fmt.Sprintf("Save changes (s) | Duplicate (p) | Send to (t) | Delete (d)%s\n\n", move)
 
 	for i, bytemark := range state.bytemarks {
 		title := bytemark.Title
@@ -641,7 +648,7 @@ func bytemarksManagerView(m model) string {
 				title = styles.HRender(styles.ProtonPurple, title)
 			}
 		}
-		s += fmt.Sprintf("%s%d: %s\n", cursor, i, title)
+		s += fmt.Sprintf("%s%s\n", cursor, title)
 	}
 
 	s += "\nCreate bytemark using system clipboard (n)\nGo back (esc)\n"
@@ -689,11 +696,58 @@ func updateSaveChanges(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					log.Fatal(err)
 				}
-				stateB.bytemarks, err = utils.FileToBytemarks(selectedFile)
+				selectedFile.Close()
+
+				file, err := os.OpenFile(
+					stateB.hyperpath,
+					os.O_RDWR,
+					0666,
+				)
 				if err != nil {
 					log.Fatal(err)
 				}
+				m.bytemarksManager.bytemarks, err = utils.FileToBytemarks(file)
+				if err != nil {
+					log.Fatal(err)
+				}
+				file.Close()
+				if err := m.syncOutputVars(); err != nil {
+					log.Fatal(err)
+				}
 			}
+			m.currentView = byteManagerView
+		}
+	}
+	return m, nil
+}
+
+func updateDeleteBytemark(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	stateA := &m.promptMenu
+	stateB := &m.bytemarksManager
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl-c", "q":
+			return m, tea.Quit
+		case "esc":
+			m.currentView = byteManagerView
+		case "up", "k":
+			if stateA.cursorIndex > 0 {
+				stateA.cursorIndex--
+			}
+		case "down", "j":
+			if stateA.cursorIndex < len(stateA.options)-1 {
+				stateA.cursorIndex++
+			}
+		case "enter":
+			if stateA.cursorIndex == 0 {
+				stateB.bytemarks = utils.DeleteBytemark(
+					stateB.bytemarks,
+					stateB.cursorIndex,
+				)
+			}
+			stateB.cursorIndex = 0
 			m.currentView = byteManagerView
 		}
 	}

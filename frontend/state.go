@@ -15,6 +15,7 @@ const (
 	articlesAddedView
 	bytemarksMainView
 	byteManagerView
+	deleteBytemarkView
 	saveChangesView
 	hyperpathsView
 	editHPView

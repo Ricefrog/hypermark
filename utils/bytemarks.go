@@ -48,6 +48,16 @@ func (article Bytemark) TitleContains(keyword string) bool {
 	return strings.Contains(strings.ToLower(article.Title), keyword)
 }
 
+func DeleteBytemark(original []Bytemark, index int) []Bytemark {
+	deleted := make([]Bytemark, 0)
+	for i, element := range original {
+		if i != index {
+			deleted = append(deleted, element)
+		}
+	}
+	return deleted
+}
+
 func SwapBytemarks(original []Bytemark, indexA, indexB int) []Bytemark {
 	swapped := make([]Bytemark, len(original))
 	for i := 0; i < len(original); i++ {
