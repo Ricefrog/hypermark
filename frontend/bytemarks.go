@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -53,7 +54,10 @@ func updateBytemarksMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				0666,
 			)
 			if err != nil {
-				log.Fatal(err)
+				errMsg := fmt.Sprintf("Error opening hyperpaths[%d]", state.cursorIndex)
+				errMsg += err.Error()
+				cErr := errors.New(errMsg)
+				log.Fatal(cErr)
 			}
 			m.bytemarksManager.bytemarks, err = utils.FileToBytemarks(file)
 			if err != nil {
@@ -126,6 +130,7 @@ func updateBytemarksManager(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.currentView = deleteBytemarkView
 		case "m":
 			state.moveMode = !state.moveMode
+		case "n":
 		case "up", "k":
 			if state.cursorIndex > 0 {
 				if state.moveMode {
@@ -149,6 +154,7 @@ func updateBytemarksManager(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				state.cursorIndex++
 			}
 		case "esc":
+			state.cursorIndex = 0
 			m.currentView = bytemarksMainView
 		}
 	}
@@ -296,7 +302,7 @@ func updateDeleteBytemark(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func updateSendBytemark(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	stateA := &m.promptMenu
-	//stateB := &m.bytemarksManager
+	stateB := &m.bytemarksManager
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -309,12 +315,75 @@ func updateSendBytemark(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "k":
 			if stateA.cursorIndex > 0 {
 				stateA.cursorIndex--
+				if stateA.options[stateA.cursorIndex] == "" {
+					if stateA.cursorIndex - 1 >= 0 {
+						stateA.cursorIndex--
+					} else {
+						stateA.cursorIndex++
+					}
+				}
 			}
 		case "down", "j":
 			if stateA.cursorIndex < len(stateA.options)-1 {
 				stateA.cursorIndex++
+				if stateA.options[stateA.cursorIndex] == "" {
+					if stateA.cursorIndex + 1 <= len(stateA.options) {
+						stateA.cursorIndex++
+					} else {
+						stateA.cursorIndex--
+					}
+				}
 			}
 		case "enter":
+			writeTo, err := utils.GetFile(stateA.options[stateA.cursorIndex], false)
+			if err != nil {
+				log.Fatal(err)
+			}
+			bytemark := stateB.bytemarks[stateB.cursorIndex]
+			_, err = utils.Write(writeTo, bytemark.Table(), false)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			m.promptMenu.prompt = fmt.Sprintf(
+				"Sent bytemark to %s",
+				stateA.options[stateA.cursorIndex],
+			)
+			m.promptMenu.options = []string{"Okay"}
+			m.promptMenu.cursorIndex = 0
+			m.currentView = sentConfirmationView
+		}
+	}
+	return m, nil
+}
+
+func sendBytemarkPromptView(m model) string {
+	stateA := m.promptMenu
+	//stateB := m.bytemarksManager
+
+	var s string
+	s += fmt.Sprintf("Send bytemark to hyperpath[%d] (enter)\n\n", stateA.cursorIndex)
+	for i, hyperpath := range stateA.options {
+		if hyperpath != "" {
+			cursor := ""
+			if stateA.cursorIndex == i {
+				cursor = templates.Cursor()
+				hyperpath = styles.HRender(styles.ProtonPurple, hyperpath)
+			}
+			s += fmt.Sprintf("%s%s\n", cursor, hyperpath)
+		}
+	}
+	s += "\nGo back (esc)\n"
+	return s
+}
+
+func updateSentConfirmation(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "enter", "esc":
 			m.wipePromptMenu()
 			m.currentView = byteManagerView
 		}

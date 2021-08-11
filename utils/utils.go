@@ -299,7 +299,7 @@ func overwriteMode(
 	return outputPath, err
 }
 
-func getFile(
+func GetFile(
 	fileName string,
 	overwriteFile bool,
 ) (outputPath *os.File, err error) {
@@ -401,14 +401,14 @@ func ChooseOutputPath(
 		outputPath, err = os.Stdout, nil
 	} else if len(tail) > 0 {
 		// A specific file was specified.
-		outputPath, err = getFile(tail[0], overwriteFile)
+		outputPath, err = GetFile(tail[0], overwriteFile)
 	} else {
 		// Use hyperpath.
 		var hyperpath string
 		if hyperpath, err = getMainHyperpath(); err != nil {
 			return outputPath, err
 		}
-		outputPath, err = getFile(hyperpath, overwriteFile)
+		outputPath, err = GetFile(hyperpath, overwriteFile)
 	}
 	return outputPath, err
 }

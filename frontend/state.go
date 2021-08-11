@@ -17,6 +17,7 @@ const (
 	byteManagerView
 	deleteBytemarkView
 	sendBytemarkView
+	sentConfirmationView
 	saveChangesView
 	hyperpathsView
 	editHPView

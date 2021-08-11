@@ -124,6 +124,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updateDeleteBytemark(m, msg)
 	case sendBytemarkView:
 		return updateSendBytemark(m, msg)
+	case sentConfirmationView:
+		return updateSentConfirmation(m, msg)
 	case saveChangesView:
 		return updateSaveChanges(m, msg)
 	case hyperpathsView:
@@ -155,6 +157,8 @@ func (m model) View() string {
 	case deleteBytemarkView:
 		return promptMenuView(m)
 	case sendBytemarkView:
+		return sendBytemarkPromptView(m)
+	case sentConfirmationView:
 		return promptMenuView(m)
 	case saveChangesView:
 		return promptMenuView(m)

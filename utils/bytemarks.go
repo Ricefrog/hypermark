@@ -14,6 +14,7 @@ type Bytemark struct {
 }
 
 func (b *Bytemark) Table() string {
+	b.Title = strings.ReplaceAll(b.Title, "|", "\\|") // escape | for markdown tables
 	table := fmt.Sprintf(
 		"| %s |\n| :-- |\n| %s |\n| %s |\n",
 		b.Title,

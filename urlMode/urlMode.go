@@ -12,9 +12,11 @@ func createBytemark(url string) (utils.Bytemark, error) {
 	var retErr error
 	c := colly.NewCollector()
 
+	/*
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL)
 	})
+	*/
 
 	c.OnHTML("title", func(e *colly.HTMLElement) {
 		bytemark.Title = e.Text
