@@ -88,12 +88,20 @@ func (m *model) setPrompt(prompt string, options []string) {
 	m.promptMenu.options = options
 }
 
+func (m *model) wipePromptMenu() {
+	m.promptMenu = promptMenu{}
+}
+
+func (m *model) wipeByteManager() {
+	m.bytemarksManager = bytemarksManager{}
+}
+
 // Remove previous state
 func (m *model) Wipe() {
 	m.articleMenu = articleMenu{
 		selected: make(map[int]struct{}),
 	}
-	m.promptMenu = promptMenu{}
+	m.wipePromptMenu()
 }
 
 func (m model) Init() tea.Cmd {
@@ -114,6 +122,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updateBytemarksManager(m, msg)
 	case deleteBytemarkView:
 		return updateDeleteBytemark(m, msg)
+	case sendBytemarkView:
+		return updateSendBytemark(m, msg)
 	case saveChangesView:
 		return updateSaveChanges(m, msg)
 	case hyperpathsView:
@@ -143,6 +153,8 @@ func (m model) View() string {
 	case byteManagerView:
 		return bytemarksManagerView(m)
 	case deleteBytemarkView:
+		return promptMenuView(m)
+	case sendBytemarkView:
 		return promptMenuView(m)
 	case saveChangesView:
 		return promptMenuView(m)

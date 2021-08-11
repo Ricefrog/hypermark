@@ -50,6 +50,12 @@ func ArrayToString(arr []string) string {
 	return s
 }
 
+func Copy(arr []string) []string {
+	ret := make([]string, len(arr))
+	copy(ret, arr)
+	return ret
+}
+
 func ExpandTilde(path string) string {
 	usr, _ := user.Current()
 	return strings.ReplaceAll(path, "~", usr.HomeDir)

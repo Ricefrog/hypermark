@@ -16,6 +16,7 @@ const (
 	bytemarksMainView
 	byteManagerView
 	deleteBytemarkView
+	sendBytemarkView
 	saveChangesView
 	hyperpathsView
 	editHPView
@@ -45,10 +46,11 @@ type hyperpathsMenu struct {
 }
 
 type bytemarksManager struct {
-	bytemarks    []utils.Bytemark
-	moveMode     bool
-	cursorIndex  int
-	hyperpath    string
+	bytemarks       []utils.Bytemark
+	moveMode        bool
+	cursorIndex     int
+	hyperpath       string
+	otherHyperpaths []string
 }
 
 // Generic prompt menu
