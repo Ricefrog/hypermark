@@ -21,8 +21,8 @@ var (
 	url          bool
 	clipboardOut bool
 	tui          bool
-	tuiTest      bool
-	test         bool
+	//tuiTest      bool
+	//test         bool
 )
 
 func init() {
@@ -39,10 +39,12 @@ func init() {
 		"Input will be written to the system clipboard.")
 	flag.BoolVar(&tui, "tui", false,
 		"Use TUI.")
+	/*
 	flag.BoolVar(&tuiTest, "tuiTest", false,
 		"Run stubs to test TUI styling.")
 	flag.BoolVar(&test, "test", false,
 		"Run test stubs.")
+	*/
 }
 
 func main() {
@@ -75,6 +77,7 @@ func main() {
 		return
 	}
 
+	/*
 	if tuiTest {
 		frontend.Test()
 		return
@@ -84,6 +87,7 @@ func main() {
 		utils.TestStub()
 		return
 	}
+	*/
 
 	if url {
 		bytemark, err := urlMode.BytemarkFromURL()
