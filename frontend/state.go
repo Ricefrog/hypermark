@@ -19,9 +19,11 @@ const (
 	sendBytemarkView
 	sentConfirmationView
 	saveChangesView
+	badURLView
 	hyperpathsView
 	editHPView
 	addHPView
+	deleteHyperpathView
 	createFileView
 	invalidFilepathView
 )

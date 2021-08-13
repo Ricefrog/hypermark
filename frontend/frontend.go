@@ -128,12 +128,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return updateSentConfirmation(m, msg)
 	case saveChangesView:
 		return updateSaveChanges(m, msg)
+	case badURLView:
+		return updateBadURL(m, msg)
 	case hyperpathsView:
 		return updateHyperpathsMenu(m, msg)
 	case editHPView:
 		return updateEditHyperpath(m, msg)
 	case addHPView:
 		return updateEditHyperpath(m, msg)
+	case deleteHyperpathView:
+		return updateDeleteHyperpath(m, msg)
 	case createFileView:
 		return updateCreateFile(m, msg)
 	case invalidFilepathView:
@@ -162,12 +166,16 @@ func (m model) View() string {
 		return promptMenuView(m)
 	case saveChangesView:
 		return promptMenuView(m)
+	case badURLView:
+		return promptMenuView(m)
 	case hyperpathsView:
 		return hyperpathsMenuView(m)
 	case editHPView:
 		return promptAndTextInputView(m)
 	case addHPView:
 		return promptAndTextInputView(m)
+	case deleteHyperpathView:
+		return promptMenuView(m)
 	case createFileView:
 		return promptMenuView(m)
 	case invalidFilepathView:

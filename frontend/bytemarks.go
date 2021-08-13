@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"hypermark/frontend/styles"
 	"hypermark/frontend/templates"
+	"hypermark/urlMode"
 	"hypermark/utils"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -83,8 +84,9 @@ func bytemarksMenuView(m model) string {
 	state := m.hyperpathsMenu
 
 	var s string
-	s += fmt.Sprintf("\n%s: Manage bytemarks (enter)\n\n",
+	s += fmt.Sprintf("\n%s: %s\n\n",
 		styles.MakeHyperpathString(state.cursorIndex),
+		styles.CommandInfo("Manage bytemarks", "enter"),
 	)
 
 	for i, hyperpath := range state.hyperpaths {
@@ -132,12 +134,23 @@ func updateBytemarksManager(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				state.cursorIndex,
 			)
 		case "d":
-			m.promptMenu.prompt = fmt.Sprintf("Are you sure?")
+			m.promptMenu.prompt = fmt.Sprintf("Delete '%s'?",
+				state.bytemarks[state.cursorIndex].Title,
+			)
 			m.promptMenu.options = []string{"Yes", "Cancel"}
 			m.currentView = deleteBytemarkView
 		case "m":
 			state.moveMode = !state.moveMode
 		case "n":
+			newBytemark, err := urlMode.BytemarkFromURL()
+			if err != nil {
+				m.promptMenu.prompt = err.Error()
+				m.promptMenu.cursorIndex = 0
+				m.promptMenu.options = []string{styles.CommandInfo("Go back", "esc")}
+				m.currentView = badURLView
+			} else {
+				state.bytemarks = append(state.bytemarks, newBytemark)
+			}
 		case "up", "k":
 			if state.cursorIndex > 0 {
 				if state.moveMode {
@@ -172,22 +185,21 @@ func bytemarksManagerView(m model) string {
 	state := m.bytemarksManager
 
 	if len(state.bytemarks) == 0 {
-		return "No bytemarks to display.\nGo back (esc)"
+		back := styles.CommandInfo("Go back", "esc")
+		return fmt.Sprintf("No bytemarks to display.\n%s", back)
 	}
 
 	var s string
-	s += fmt.Sprintf("%s: %s\n",
+	s += fmt.Sprintf("%s: %s\n\n",
 		styles.HRender(styles.AquaMenthe, "bytemarks"),
 		styles.StylePath(state.hyperpath),
 	)
 	var move string
 	if !state.moveMode {
-		move = " | Move (m)"
+		move = fmt.Sprintf(" | %s", styles.CommandInfo("Move", "m"))
 	} else {
-		move = " | Drop (m)"
+		move = fmt.Sprintf(" | %s", styles.CommandInfo("Drop", "m"))
 	}
-
-	s += fmt.Sprintf("Save changes (s) | Duplicate (p) | Send to (t) | Delete (d)%s\n\n", move)
 
 	for i, bytemark := range state.bytemarks {
 		title := bytemark.Title
@@ -203,7 +215,20 @@ func bytemarksManagerView(m model) string {
 		s += fmt.Sprintf("%s%s\n", cursor, title)
 	}
 
-	s += "\nCreate bytemark using system clipboard (n)\nGo back (esc)\n"
+	save := styles.CommandInfo("Save", "s")
+	dup := styles.CommandInfo("Duplicate", "p")
+	send := styles.CommandInfo("Send to", "t")
+	del := styles.CommandInfo("Delete", "d")
+	s += fmt.Sprintf("\n%s   | %s | %s\n%s%s      | %s\n%s\n",
+		save,
+		dup,
+		send,
+		del,
+		move,
+		styles.CommandInfo("Create bytemark", "n"),
+		styles.CommandInfo("Go back", "esc"),
+	)
+
 	return s
 }
 
@@ -392,6 +417,20 @@ func updateSentConfirmation(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			return m, tea.Quit
+		case "enter", "esc":
+			m.wipePromptMenu()
+			m.currentView = byteManagerView
+		}
+	}
+	return m, nil
+}
+
+func updateBadURL(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl-c", "q":
 			return m, tea.Quit
 		case "enter", "esc":
 			m.wipePromptMenu()

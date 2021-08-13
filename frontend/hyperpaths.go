@@ -35,36 +35,39 @@ func updateHyperpathsMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				selectedHP := state.hyperpaths[state.cursorIndex]
 				placeholder := selectedHP
 				prompt := fmt.Sprintf(
-					"Editing hyperpath[%d]",
-					state.cursorIndex,
+					"%s %s",
+					styles.HRender(styles.Crimson, "Editing"),
+					styles.MakeHyperpathString(state.cursorIndex),
 				)
-				footer := "Submit (enter) | Go back (esc)"
+
+				submit := styles.CommandInfo("Submit", "enter")
+				back := styles.CommandInfo("Go back", "esc")
+				footer := fmt.Sprintf("%s | %s", submit, back)
 
 				state.editHyperpath.index = state.cursorIndex
 				m.initPromptAndTextInput(placeholder, prompt, footer)
 				m.currentView = editHPView
 			case "d":
 				if len(state.hyperpaths) == 1 { break }
-				state.hyperpaths = utils.DeleteElement(
-					state.hyperpaths,
-					state.cursorIndex,
+				m.promptMenu.prompt = fmt.Sprintf("Delete '%s'?",
+					state.hyperpaths[state.cursorIndex],
 				)
-				if state.cursorIndex > 0 {
-					state.cursorIndex--
-				}
-				err := utils.WriteHyperpaths(state.hyperpaths)
-				if err != nil {
-					log.Fatal(err)
-				}
-				m.loadHyperpaths()
+				m.promptMenu.options = []string{"Yes", "Cancel"}
+				m.currentView = deleteHyperpathView
 			case "m":
 				state.moveMode = true
 			case "n":
 				placeholder := fmt.Sprintf(
 					"hyperpath[%d]", len(state.hyperpaths),
 				)
-				prompt := fmt.Sprintf("Creating %s", placeholder)
-				footer := "Submit (enter) | Go back (esc)"
+				prompt := fmt.Sprintf("%s %s",
+					styles.HRender(styles.Crimson, "Creating"),
+					styles.MakeHyperpathString(len(state.hyperpaths)),
+				)
+
+				submit := styles.CommandInfo("Submit", "enter")
+				back := styles.CommandInfo("Go back", "esc")
+				footer := fmt.Sprintf("%s | %s", submit, back)
 
 				state.editHyperpath.index = len(state.hyperpaths)
 				m.initPromptAndTextInput(placeholder, prompt, footer)
@@ -275,5 +278,46 @@ func updateInvalidFilepath(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.currentView = hyperpathsView
 		}
 	}
+	return m, nil
+}
+
+func updateDeleteHyperpath(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
+	stateA := &m.hyperpathsMenu
+	stateB := &m.promptMenu
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl-c", "q":
+			return m, tea.Quit
+		case "up", "k":
+			if stateB.cursorIndex > 0 {
+				stateB.cursorIndex--
+			}
+		case "down", "j":
+			if stateB.cursorIndex < len(stateB.options)-1 {
+				stateB.cursorIndex++
+			}
+		case "enter", "esc":
+			if stateB.cursorIndex == 0 {
+				stateA.hyperpaths = utils.DeleteElement(
+					stateA.hyperpaths,
+					stateA.cursorIndex,
+				)
+				if stateA.cursorIndex > 0 {
+					stateA.cursorIndex--
+				}
+				if err := utils.WriteHyperpaths(stateA.hyperpaths); err != nil {
+					log.Fatal(err)
+				}
+
+				m.loadHyperpaths()
+			}
+
+			m.wipePromptMenu()
+			m.currentView = hyperpathsView
+		}
+	}
+
 	return m, nil
 }

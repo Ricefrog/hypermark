@@ -5,6 +5,8 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/gocolly/colly"
 	"hypermark/utils"
+	"fmt"
+	"errors"
 )
 
 func createBytemark(url string) (utils.Bytemark, error) {
@@ -23,7 +25,8 @@ func createBytemark(url string) (utils.Bytemark, error) {
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		retErr = err
+		errStr := fmt.Sprintf("Could not make bytemark using URL: %s.", url)
+		retErr = errors.New(errStr)
 	})
 
 	c.Visit(url)
