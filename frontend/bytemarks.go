@@ -397,7 +397,11 @@ func sendBytemarkPromptView(m model) string {
 	//stateB := m.bytemarksManager
 
 	var s string
-	s += fmt.Sprintf("Send bytemark to hyperpath[%d] (enter)\n\n", stateA.cursorIndex)
+	s += fmt.Sprintf("%s %s %s\n\n",
+		styles.HRender(styles.Crimson, "Send bytemark to"),
+		styles.MakeHyperpathString(stateA.cursorIndex),
+		styles.KeyStyle("enter"),
+	)
 	for i, hyperpath := range stateA.options {
 		if hyperpath != "" {
 			cursor := ""
@@ -408,7 +412,7 @@ func sendBytemarkPromptView(m model) string {
 			s += fmt.Sprintf("%s%s\n", cursor, hyperpath)
 		}
 	}
-	s += "\nGo back (esc)\n"
+	s += fmt.Sprintf("\n%s\n", styles.CommandInfo("Go back", "esc"))
 	return s
 }
 

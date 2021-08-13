@@ -112,14 +112,19 @@ func StylePath(path string) string {
 	return fmt.Sprintf("%s%s", head, basename)
 }
 
-func CommandInfo(command, key string) string {
-	commandColor := OrangeRed
+func KeyStyle(key string) string {
 	keyColor := Crimson
 	bracketColor := JustBlue
 
-	command = HRender(commandColor, command)
 	key = HRender(keyColor, key)
 	lBracket := HRender(bracketColor, "(")
 	rBracket := HRender(bracketColor, ")")
-	return fmt.Sprintf("%s %s%s%s", command, lBracket, key, rBracket)
+	return fmt.Sprintf("%s%s%s", lBracket, key, rBracket)
+}
+
+func CommandInfo(command, key string) string {
+	commandColor := OrangeRed
+
+	command = HRender(commandColor, command)
+	return fmt.Sprintf("%s %s", command, KeyStyle(key))
 }
