@@ -326,7 +326,7 @@ func updateDeleteBytemark(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 					stateB.bytemarks,
 					stateB.cursorIndex,
 				)
-				stateB.cursorIndex--
+				if stateB.cursorIndex > 0 {stateB.cursorIndex--}
 			}
 			m.wipePromptMenu()
 			m.currentView = byteManagerView
