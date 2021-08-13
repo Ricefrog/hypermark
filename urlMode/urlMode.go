@@ -1,7 +1,7 @@
 package urlMode
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/atotto/clipboard"
 	"github.com/gocolly/colly"
 	"hypermark/utils"

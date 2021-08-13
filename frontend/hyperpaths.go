@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"strconv"
 	"hypermark/frontend/styles"
 	"hypermark/frontend/templates"
 	"hypermark/utils"
@@ -113,22 +114,25 @@ func hyperpathsMenuView(m model) string {
 	var del string
 	var move string
 	if len(state.hyperpaths) > 1 && !state.moveMode {
-		del = " | Delete (d)"
+		del = fmt.Sprintf(" | %s", styles.CommandInfo("Delete", "d"))
 	}
 	if !state.moveMode {
-		move = " | Move (m)"
+		move = fmt.Sprintf(" | %s", styles.CommandInfo("Move", "m"))
 	} else {
-		move = " | Drop (m)"
+		move = fmt.Sprintf(" | %s", styles.CommandInfo("Drop", "m"))
 	}
 
-	s += fmt.Sprintf("\nhyperpaths[%d]: Edit (e)%s%s\n\n",
-		state.cursorIndex,
+	s += fmt.Sprintf("\n%s: %s%s%s\n\n",
+		styles.MakeHyperpathString(state.cursorIndex),
+		styles.CommandInfo("Edit", "e"),
 		del,
 		move,
 	)
 
 	for i, hyperpath := range state.hyperpaths {
 		cursor := ""
+		num := strconv.Itoa(i)
+		colon := ":"
 		if state.cursorIndex == i {
 			cursor = templates.Cursor()
 			if state.moveMode {
@@ -136,11 +140,16 @@ func hyperpathsMenuView(m model) string {
 			} else {
 				hyperpath = styles.HRender(styles.ProtonPurple, hyperpath)
 			}
+			num = styles.HRender(styles.Crimson, num)
+			colon = styles.HRender(styles.OrangeRed, colon)
 		}
-		s += fmt.Sprintf("%s%d: %s\n", cursor, i, hyperpath)
+		s += fmt.Sprintf("%s%s%s %s\n", cursor, num, colon, hyperpath)
 	}
 
-	s += "\nAdd new hyperpath (n)\nGo back (esc)\n"
+	s += fmt.Sprintf("\n%s\n%s\n",
+		styles.CommandInfo("Add new hyperpath", "n"),
+		styles.CommandInfo("Go back", "esc"),
+	)
 	return s
 }
 

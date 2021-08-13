@@ -1,6 +1,9 @@
 package styles
 
 import (
+	"strconv"
+	"fmt"
+	"hypermark/utils"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -14,6 +17,7 @@ var (
 	MatureCrimson = "#9a031e"
 	Burgundy = "#5f0f40"
 	PalestBlue = "#C6E2FF"
+	SharkBlue = "#354052"
 
 	headerStyle = lipgloss.NewStyle().
 		Bold(true).
@@ -58,6 +62,14 @@ var (
 		BorderForeground(lipgloss.Color(JustBlue)).
 		BorderStyle(lipgloss.RoundedBorder())
 
+	TitleStyle = lipgloss.NewStyle().
+		Bold(true).
+		Padding(1).
+		Foreground(lipgloss.Color(Crimson)).
+		//Background(lipgloss.Color(SharkBlue)).
+		BorderForeground(lipgloss.Color(JustBlue)).
+		BorderStyle(lipgloss.RoundedBorder())
+
 	CursorStyle = lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color(AquaMenthe))
@@ -76,4 +88,38 @@ func HRender(color, message string) string {
 		Bold(true).
 		Foreground(lipgloss.Color(color))
 	return style.Render(message)
+}
+
+func MakeHyperpathString(num int) string {
+	numColor := Crimson
+	hpColor := AquaMenthe
+	bracketColor := OrangeRed
+
+	numStr := HRender(numColor, strconv.Itoa(num))
+	hp := HRender(hpColor, "hyperpath")
+
+	lBracket := HRender(bracketColor, "[")
+	rBracket := HRender(bracketColor, "]")
+
+	s := fmt.Sprintf("%s%s%s%s", hp, lBracket, numStr, rBracket)
+	return s
+}
+
+func StylePath(path string) string {
+	color := Crimson
+	head, basename := utils.SplitPath(path)
+	basename = HRender(color, basename)
+	return fmt.Sprintf("%s%s", head, basename)
+}
+
+func CommandInfo(command, key string) string {
+	commandColor := OrangeRed
+	keyColor := Crimson
+	bracketColor := JustBlue
+
+	command = HRender(commandColor, command)
+	key = HRender(keyColor, key)
+	lBracket := HRender(bracketColor, "(")
+	rBracket := HRender(bracketColor, ")")
+	return fmt.Sprintf("%s %s%s%s", command, lBracket, key, rBracket)
 }

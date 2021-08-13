@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"hypermark/frontend/styles"
 	"hypermark/frontend/templates"
 	"hypermark/utils"
@@ -82,15 +83,21 @@ func bytemarksMenuView(m model) string {
 	state := m.hyperpathsMenu
 
 	var s string
-	s += fmt.Sprintf("\nhyperpaths[%d]: Manage bytemarks (enter)\n\n", state.cursorIndex)
+	s += fmt.Sprintf("\n%s: Manage bytemarks (enter)\n\n",
+		styles.MakeHyperpathString(state.cursorIndex),
+	)
 
 	for i, hyperpath := range state.hyperpaths {
 		cursor := ""
+		num := strconv.Itoa(i)
+		colon := ":"
 		if state.cursorIndex == i {
 			cursor = templates.Cursor()
 			hyperpath = styles.HRender(styles.ProtonPurple, hyperpath)
+			num = styles.HRender(styles.Crimson, num)
+			colon = styles.HRender(styles.OrangeRed, colon)
 		}
-		s += fmt.Sprintf("%s%d: %s\n", cursor, i, hyperpath)
+		s += fmt.Sprintf("%s%s%s %s\n", cursor, num, colon, hyperpath)
 	}
 	return s
 }
@@ -169,7 +176,10 @@ func bytemarksManagerView(m model) string {
 	}
 
 	var s string
-	s += fmt.Sprintf("%s\n", state.hyperpath)
+	s += fmt.Sprintf("%s: %s\n",
+		styles.HRender(styles.AquaMenthe, "bytemarks"),
+		styles.StylePath(state.hyperpath),
+	)
 	var move string
 	if !state.moveMode {
 		move = " | Move (m)"

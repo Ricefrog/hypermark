@@ -104,6 +104,18 @@ func removeBasename(path string) (retPath string) {
 	return retPath
 }
 
+func getBasename(path string) string {
+	parts := strings.Split(path, "/")
+	return parts[len(parts)-1]
+}
+
+// Split a path into two separate strings (head, basename)
+func SplitPath(path string) (string, string) {
+	head := removeBasename(path)
+	basename := getBasename(path)
+	return head, basename
+}
+
 func removeDuplicates(ints []int) []int {
 	ret := make([]int, 0)
 	for _, num := range ints {

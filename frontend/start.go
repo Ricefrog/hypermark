@@ -46,11 +46,12 @@ func startMenuView(m model) string {
 	if m.outputVars.clipboardOut {
 		outstr = "system clipboard"
 	} else {
-		outstr = m.outputVars.outputPath.Name()
+		outstr = styles.StylePath(m.outputVars.outputPath.Name())
 	}
 
-	s := "\nhypermark\n\n"
-	s += fmt.Sprintf("Writing to -> %s\n\n", outstr)
+	//s := "\nhypermark\n\n"
+	s := styles.TitleStyle.Render("hypermark")
+	s += fmt.Sprintf("\n\n%s: %s\n\n", styles.MakeHyperpathString(0), outstr)
 	for i, choice := range state.choices {
 		if i == state.cursorIndex {
 			s += templates.Cursor()
