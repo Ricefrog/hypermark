@@ -24,6 +24,7 @@ func updateStartMenu(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 				state.cursorIndex++
 			}
 		case "enter":
+			ClearScreen()
 			switch state.cursorIndex {
 			case 0:
 				m.initializeArticles()

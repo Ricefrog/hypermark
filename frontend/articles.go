@@ -158,6 +158,7 @@ func updateArticlesAdded(m model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "enter", " ":
 			if state.cursorIndex == 0 {
+				ClearScreen()
 				m.currentView = startView
 				m.Wipe()
 			} else {
