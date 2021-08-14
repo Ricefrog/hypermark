@@ -20,7 +20,7 @@ func createBytemark(url string) (utils.Bytemark, error) {
 	})
 	*/
 
-	c.OnHTML("title", func(e *colly.HTMLElement) {
+	c.OnHTML("head title", func(e *colly.HTMLElement) {
 		bytemark.Title = e.Text
 	})
 
