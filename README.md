@@ -54,4 +54,4 @@ hypermark can scan any valid URL from the system clipboard and use it to create 
 <img src="./showcase/creatingABytemark.gif">
 
 ## After creating bytemark 
-<img height="800" width="800" src="./showcase/afterSending.png">
+<img height="800" width="800" src="./showcase/afterCreating.png">
